@@ -453,7 +453,12 @@ func (overlay *KnockoutOverlay) DrawNormal(batch *batch.QuadBatch, colors []colo
 
 	minSize := settings.Knockout.MinCursorSize
 	maxSize := settings.Knockout.MaxCursorSize
-	settings.Cursor.CursorSize = minSize + (maxSize-minSize)*math.Pow(1-math.Sin(float64(alive)/max(51, float64(settings.PLAYERS))*math.Pi/2), 3)
+
+	if alive <= 1 {
+		settings.Cursor.CursorSize = maxSize
+	} else {
+		settings.Cursor.CursorSize = minSize + (maxSize-minSize)*math.Pow(1-math.Sin(float64(alive)/max(51, float64(settings.PLAYERS))*math.Pi/2), 3)
+	}
 
 	batch.SetScale(1, 1)
 }

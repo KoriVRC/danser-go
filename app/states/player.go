@@ -2,6 +2,14 @@ package states
 
 import (
 	"fmt"
+	"log"
+	"math"
+	"math/rand"
+	"runtime"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/dustin/go-humanize"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -37,13 +45,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/vector"
 	"github.com/wieku/danser-go/framework/profiler"
 	"github.com/wieku/danser-go/framework/qpc"
-	"log"
-	"math"
-	"math/rand"
-	"runtime"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const windowsOffset = 15
@@ -279,8 +280,12 @@ func NewPlayer(beatMap *beatmap.BeatMap) *Player {
 		player.controller.SetBeatMap(player.bMap)
 		player.controller.InitCursors()
 
-		// always use knockout overlay when knockout mode is active
-		player.overlay = overlays.NewKnockoutOverlay(controller.(*dance.ReplayController))
+		if settings.REPLAY != "" {
+			player.overlay = overlays.NewScoreOverlay(controller.(*dance.ReplayController).GetRuleset(), player.controller.GetCursors()[0])
+		} else {
+			// always use knockout overlay when knockout mode is active
+			player.overlay = overlays.NewKnockoutOverlay(controller.(*dance.ReplayController))
+		}
 	} else {
 		player.controller = dance.NewGenericController()
 		player.controller.SetBeatMap(player.bMap)
