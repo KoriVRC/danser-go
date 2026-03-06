@@ -279,11 +279,8 @@ func NewPlayer(beatMap *beatmap.BeatMap) *Player {
 		player.controller.SetBeatMap(player.bMap)
 		player.controller.InitCursors()
 
-		if settings.PLAYERS == 1 {
-			player.overlay = overlays.NewScoreOverlay(player.controller.(*dance.ReplayController).GetRuleset(), player.controller.GetCursors()[0])
-		} else {
-			player.overlay = overlays.NewKnockoutOverlay(controller.(*dance.ReplayController))
-		}
+		// always use knockout overlay when knockout mode is active
+		player.overlay = overlays.NewKnockoutOverlay(controller.(*dance.ReplayController))
 	} else {
 		player.controller = dance.NewGenericController()
 		player.controller.SetBeatMap(player.bMap)
