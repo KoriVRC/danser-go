@@ -354,6 +354,8 @@ func (slider *Slider) createDummyCircle(time float64, inheritStart, inheritEnd b
 	circle.StackLeniency = slider.StackLeniency
 	circle.StackIndexMap = slider.StackIndexMap
 	circle.ComboSet = slider.ComboSet
+	circle.TagIndex = slider.TagIndex
+	circle.Parent = slider
 
 	return circle
 }
@@ -1044,18 +1046,11 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 		mShift = circleColor.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
 	}
 
-	if !settings.Objects.Colors.Sliders.Body.UseHitCircleColor {
-		bodyColor = bodyColor.Shift(mShift, 0, 0)
-	}
-
-	if !settings.Objects.Colors.Sliders.Border.UseHitCircleColor {
-		innerBorder = innerBorder.Shift(mShift, 0, 0)
-		outerBorder = outerBorder.Shift(mShift, 0, 0)
-	}
-
 	if slider.diff.CheckModActive(difficulty.Traceable) && slider.HitObjectID != 0 {
 		borderInner = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), circleColor)
-		borderInner = borderInner.Shift(mShift, 0, 0)
+		if borderInner != circleColor {
+			borderInner = borderInner.Shift(mShift, 0, 0)
+		}
 		borderOuter = borderInner
 		bodyOpacityInner = 0
 		bodyOpacityOuter = 0
@@ -1082,16 +1077,25 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 		bodyInner = baseTrack.Shade2(0.5)
 	} else {
 		if settings.Objects.Colors.Sliders.Border.UseHitCircleColor {
-			borderInner = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderInner)
-			borderOuter = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderOuter)
+			newInner := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderInner)
+			if newInner != borderInner {
+				newInner = newInner.Shift(mShift, 0, 0)
+			}
+			borderInner = newInner
 
-			borderInner = borderInner.Shift(mShift, 0, 0)
-			borderOuter = borderOuter.Shift(mShift, 0, 0)
+			newOuter := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderOuter)
+			if newOuter != borderOuter {
+				newOuter = newOuter.Shift(mShift, 0, 0)
+			}
+			borderOuter = newOuter
 		}
 
 		if settings.Objects.Colors.Sliders.Body.UseHitCircleColor {
-			bodyColor = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), bodyColor)
-			bodyColor = bodyColor.Shift(mShift, 0, 0)
+			newBody := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), bodyColor)
+			if newBody != bodyColor {
+				newBody = newBody.Shift(mShift, 0, 0)
+			}
+			bodyColor = newBody
 		}
 
 		if settings.Objects.Colors.Sliders.Border.EnableCustomGradientOffset {
@@ -1211,8 +1215,9 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 		color = color.Shift(float32(slider.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
+	mShift := float32(0)
 	if settings.DIVIDES > 1 {
-		color = color.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+		mShift = color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
 	}
 
 	if settings.Skin.UseColorsFromSkin {
@@ -1230,12 +1235,15 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 
 		batch.SetColor(float64(c.R), float64(c.G), float64(c.B), alpha)
 	} else if settings.Objects.Colors.Sliders.SliderBallTint {
-		color = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
+		newColor := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
 
 		if settings.DIVIDES > 1 && settings.Objects.Colors.Sliders.SliderBallTint {
-			color = color.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+			if newColor != color {
+				newColor = newColor.Shift(mShift, 0, 0)
+			}
 		}
 
+		color = newColor
 		batch.SetColor(float64(color.R), float64(color.G), float64(color.B), alpha)
 	} else {
 		batch.SetColor(1, 1, 1, alpha)

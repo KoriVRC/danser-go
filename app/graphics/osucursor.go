@@ -317,7 +317,7 @@ func (cursor *osuRenderer) DrawM(scale, expand float64, batch *batch.QuadBatch, 
 
 	batch.ResetTransform()
 	if settings.Skin.Cursor.HueShift {
-		batch.SetColor32(color.R, color.G, color.B, color.A)
+		batch.SetColor(1, 1, 1, float64(color.A))
 
 		for _, spr := range cursor.manager.GetProcessedSprites() {
 			spr.SetHueShift(hShift)

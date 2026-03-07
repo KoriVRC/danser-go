@@ -1,6 +1,8 @@
 package schedulers
 
 import (
+	"math/rand"
+
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/beatmap/objects"
 	"github.com/wieku/danser-go/app/dance/input"
@@ -9,7 +11,6 @@ import (
 	"github.com/wieku/danser-go/app/graphics"
 	"github.com/wieku/danser-go/app/settings"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math/rand"
 )
 
 type GenericScheduler struct {
@@ -64,6 +65,11 @@ func (scheduler *GenericScheduler) Init(objs []objects.IHitObject, diff *difficu
 				}
 
 				dC := objects.DummyCircle(current.GetStackedEndPositionMod(diff).Add(next.GetStackedStartPositionMod(diff)).Scl(0.5), sTime)
+				dC.TagIndex = current.TagIndex
+				dC.Parent = current.Parent
+				if dC.Parent == nil {
+					dC.Parent = current
+				}
 
 				if !diff.CheckModActive(difficulty.Lazer) || (!current.SliderPointEnd && !next.SliderPointEnd) { // Don't double-click if any of them is a slider end
 					dC.DoubleClick = true
@@ -88,7 +94,13 @@ func (scheduler *GenericScheduler) Init(objs []objects.IHitObject, diff *difficu
 			}
 
 			if c, cOk := o.(*objects.Circle); cOk && (!c.SliderPoint || c.SliderPointStart) {
-				scheduler.queue[j] = objects.DummyCircle(c.GetStackedStartPositionMod(diff), c.GetStartTime()+1)
+				dC := objects.DummyCircle(c.GetStackedStartPositionMod(diff), c.GetStartTime()+1)
+				dC.TagIndex = c.TagIndex
+				dC.Parent = c.Parent
+				if dC.Parent == nil {
+					dC.Parent = c
+				}
+				scheduler.queue[j] = dC
 			}
 		}
 	}

@@ -64,6 +64,15 @@ func (controller *GenericController) InitCursors() {
 
 	queue := controller.bMap.GetObjectsCopy()
 
+	// Initial tagging for original objects that might be replaced later
+	for i, o := range queue {
+		if settings.CursorDance.ComboTag {
+			o.SetTagIndex(int(o.GetComboSet()) % settings.TAG)
+		} else {
+			o.SetTagIndex(i % settings.TAG)
+		}
+	}
+
 	// Convert retarded (0 length / 0ms) sliders to pseudo-circles
 	for i := 0; i < len(queue); i++ {
 		if s, ok := queue[i].(*objects.Slider); ok && s.IsRetarded() {

@@ -49,6 +49,8 @@ type Circle struct {
 
 	// DoubleClick is used in cursordances when 2 nearby circles are merged to one
 	DoubleClick bool
+
+	Parent IHitObject
 }
 
 func NewCircle(data []string) *Circle {
@@ -310,7 +312,7 @@ func (circle *Circle) Draw(time float64, color color2.Color, batch *batch.QuadBa
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
-	if settings.DIVIDES > 1 {
+	if settings.DIVIDES > 1 && calced != color {
 		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
 	}
 
@@ -370,13 +372,21 @@ func (circle *Circle) DrawApproach(time float64, color color2.Color, batch *batc
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
-	if settings.DIVIDES > 1 {
+	if settings.DIVIDES > 1 && calced != color {
 		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
 	}
 
 	circle.approachCircle.SetColor(calced)
 
 	circle.approachCircle.Draw(time, batch)
+}
+
+func (circle *Circle) SetTagIndex(index int) {
+	circle.HitObject.SetTagIndex(index)
+
+	if circle.Parent != nil {
+		circle.Parent.SetTagIndex(index)
+	}
 }
 
 func (circle *Circle) GetType() Type {
