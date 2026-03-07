@@ -44,6 +44,9 @@ type IHitObject interface {
 	IsNewCombo() bool
 	SetNewCombo(b bool)
 
+	GetTagIndex() int
+	SetTagIndex(int)
+
 	GetType() Type
 
 	DisableAudioSubmission(value bool)
@@ -81,6 +84,7 @@ type HitObject struct {
 	ComboSet    int64
 	ComboSetHax int64
 	ColorOffset int64
+	TagIndex    int
 
 	BasicHitSound           audio.HitSoundInfo
 	audioSubmissionDisabled bool
@@ -198,6 +202,14 @@ func (hitObject *HitObject) IsNewCombo() bool {
 
 func (hitObject *HitObject) SetNewCombo(b bool) {
 	hitObject.NewCombo = b
+}
+
+func (hitObject *HitObject) GetTagIndex() int {
+	return hitObject.TagIndex
+}
+
+func (hitObject *HitObject) SetTagIndex(index int) {
+	hitObject.TagIndex = index
 }
 
 func (hitObject *HitObject) DisableAudioSubmission(value bool) {

@@ -22,6 +22,7 @@ func initSkin() *skin {
 			ForceLongTrail:   false,
 			LongTrailLength:  2048,
 			LongTrailDensity: 1.0,
+			HueShift:         false,
 		},
 	}
 }
@@ -70,4 +71,5 @@ type skinCursor struct {
 	ForceLongTrail   bool
 	LongTrailLength  int64   `max:"10000"`
 	LongTrailDensity float64 `min:"0.1" max:"3"`
+	HueShift         bool    `label:"Hue Shift (Mirror/Tag)"`
 }

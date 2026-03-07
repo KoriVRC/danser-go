@@ -1,6 +1,9 @@
 package dance
 
 import (
+	"sort"
+	"strings"
+
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/objects"
 	"github.com/wieku/danser-go/app/dance/movers"
@@ -8,8 +11,6 @@ import (
 	"github.com/wieku/danser-go/app/dance/spinners"
 	"github.com/wieku/danser-go/app/graphics"
 	"github.com/wieku/danser-go/app/settings"
-	"sort"
-	"strings"
 )
 
 type Controller interface {
@@ -127,7 +128,7 @@ func (controller *GenericController) InitCursors() {
 				startTime = o.GetEndTime() + 30
 			}
 
-			if subSpinners != nil && len(subSpinners) > 0 {
+			if len(subSpinners) > 0 {
 				if s.GetEndTime() > startTime {
 					subSpinners = append(subSpinners, objects.NewDummySpinner(startTime, s.GetEndTime()))
 				}
@@ -143,14 +144,17 @@ func (controller *GenericController) InitCursors() {
 		_, isSpinner := o.(*objects.Spinner)
 
 		if (isSpinner && settings.CursorDance.DoSpinnersTogether) || settings.CursorDance.Battle {
+			o.SetTagIndex(-1)
 			for i := range queues {
 				queues[i].hitObjects = append(queues[i].hitObjects, o)
 			}
 		} else if settings.CursorDance.ComboTag {
 			i := int(o.GetComboSet()) % settings.TAG
+			o.SetTagIndex(i)
 			queues[i].hitObjects = append(queues[i].hitObjects, o)
 		} else {
 			i := j % settings.TAG
+			o.SetTagIndex(i)
 			queues[i].hitObjects = append(queues[i].hitObjects, o)
 		}
 	}

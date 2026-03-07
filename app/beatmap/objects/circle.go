@@ -1,6 +1,9 @@
 package objects
 
 import (
+	"math"
+	"strconv"
+
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/settings"
@@ -12,8 +15,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/animation/easing"
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"strconv"
 )
 
 const defaultCircleName = "hit"
@@ -304,7 +305,16 @@ func (circle *Circle) Draw(time float64, color color2.Color, batch *batch.QuadBa
 
 	batch.SetColor(1, 1, 1, alpha)
 
-	circle.hitCircle.SetColor(skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color))
+	calced := skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color)
+	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
+		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
+	}
+
+	if settings.DIVIDES > 1 {
+		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+	}
+
+	circle.hitCircle.SetColor(calced)
 
 	circle.hitCircle.Draw(time, batch)
 
@@ -355,7 +365,16 @@ func (circle *Circle) DrawApproach(time float64, color color2.Color, batch *batc
 	batch.SetTranslation(position.Copy64())
 	batch.SetColor(1, 1, 1, float64(color.A))
 
-	circle.approachCircle.SetColor(skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color))
+	calced := skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color)
+	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
+		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
+	}
+
+	if settings.DIVIDES > 1 {
+		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+	}
+
+	circle.approachCircle.SetColor(calced)
 
 	circle.approachCircle.Draw(time, batch)
 }

@@ -74,8 +74,8 @@ type ISprite interface {
 
 	SetCutOrigin(origin vector.Vector2d)
 
+	SetHueShift(shift float32)
 	SetAdditive(on bool)
-
 	GetStartTime() float64
 
 	SetStartTime(startTime float64)

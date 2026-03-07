@@ -2,6 +2,8 @@ package batch
 
 import (
 	"fmt"
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/wieku/danser-go/framework/assets"
 	"github.com/wieku/danser-go/framework/graphics/attribute"
@@ -12,7 +14,6 @@ import (
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/vector"
 	"github.com/wieku/danser-go/framework/profiler"
-	"math"
 )
 
 const defaultBatchSize = 2000
@@ -26,6 +27,7 @@ type QuadBatch struct {
 	scale      vector.Vector2d
 	subscale   vector.Vector2d
 	rotation   float64
+	hueShift   float32
 
 	transform mgl32.Mat4
 	texture   texture.Texture
@@ -90,6 +92,7 @@ func newQuadBatchSize(maxSprites int, persistent bool) *QuadBatch {
 		{Name: "in_layer", Type: attribute.Float},
 		{Name: "in_color", Type: attribute.ColorPacked},
 		{Name: "in_additive", Type: attribute.Float},
+		{Name: "in_hueshift", Type: attribute.Float},
 	}
 
 	if persistent {
@@ -262,6 +265,10 @@ func (batch *QuadBatch) SetAdditive(additive bool) {
 	batch.additive = additive
 }
 
+func (batch *QuadBatch) SetHueShift(shift float32) {
+	batch.hueShift = shift
+}
+
 func (batch *QuadBatch) DrawUnit(texture texture.TextureRegion) {
 	batch.drawTextureBase(texture, false)
 }
@@ -317,6 +324,7 @@ func (batch *QuadBatch) drawTextureBase(texture texture.TextureRegion, useTextur
 	batch.data[idx+10] = layer
 	batch.data[idx+11] = batch.color.PackFloat()
 	batch.data[idx+12] = add
+	batch.data[idx+13] = batch.hueShift
 
 	batch.currentFloats += batch.vertexSize
 	batch.currentSize++
@@ -381,6 +389,7 @@ func (batch *QuadBatch) DrawStObject(position, origin, scale vector.Vector2d, fl
 	batch.data[idx+10] = layer
 	batch.data[idx+11] = color2.PackFloat(r, g, b, a)
 	batch.data[idx+12] = add
+	batch.data[idx+13] = batch.hueShift
 
 	batch.currentFloats += batch.vertexSize
 	batch.currentSize++

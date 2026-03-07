@@ -1,6 +1,10 @@
 package dance
 
 import (
+	"log"
+	"strings"
+	"time"
+
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
@@ -16,9 +20,6 @@ import (
 	"github.com/wieku/danser-go/framework/goroutines"
 	"github.com/wieku/danser-go/framework/math/vector"
 	"github.com/wieku/danser-go/framework/platform"
-	"log"
-	"strings"
-	"time"
 )
 
 type PlayerController struct {
@@ -86,34 +87,38 @@ func (controller *PlayerController) KeyEvent(w *glfw.Window, key glfw.Key, scanc
 	}
 
 	if strings.EqualFold(kName, settings.Input.LeftKey) {
-		if action == glfw.Press {
+		switch action {
+		case glfw.Press:
 			controller.cursors[0].LeftKey = true
-		} else if action == glfw.Release {
+		case glfw.Release:
 			controller.cursors[0].LeftKey = false
 		}
 	}
 
 	if strings.EqualFold(kName, settings.Input.RightKey) {
-		if action == glfw.Press {
+		switch action {
+		case glfw.Press:
 			controller.cursors[0].RightKey = true
-		} else if action == glfw.Release {
+		case glfw.Release:
 			controller.cursors[0].RightKey = false
 		}
 	}
 
 	if strings.EqualFold(kName, settings.Input.RestartKey) {
-		if action == glfw.Press {
+		switch action {
+		case glfw.Press:
 			controller.quickRestartTime = controller.lastTime
 			controller.quickRestart = true
-		} else if action == glfw.Release {
+		case glfw.Release:
 			controller.quickRestart = false
 		}
 	}
 
 	if strings.EqualFold(kName, settings.Input.SmokeKey) {
-		if action == glfw.Press {
+		switch action {
+		case glfw.Press:
 			controller.cursors[0].SmokeKey = true
-		} else if action == glfw.Release {
+		case glfw.Release:
 			controller.cursors[0].SmokeKey = false
 		}
 	}

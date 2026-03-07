@@ -1,17 +1,19 @@
 package objects
 
 import (
+	"strconv"
+	"strings"
+
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/framework/graphics/batch"
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"strconv"
-	"strings"
 )
 
 type Renderable interface {
 	Draw(time float64, color color2.Color, batch *batch.QuadBatch) bool
 	DrawApproach(time float64, color color2.Color, batch *batch.QuadBatch)
+	GetTagIndex() int
 }
 
 func commonParse(data []string, extraIndex int) *HitObject {

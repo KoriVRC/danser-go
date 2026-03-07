@@ -27,6 +27,7 @@ type color struct {
 	FlashToTheBeat        bool    //true, objects size is changing with music peak amplitude
 	FlashAmplitude        float64 `min:"-360" max:"360" format:"%.0f°"` //50, hue offset for flashes
 	currentHue            float64
+	LastBaseHue           float64
 }
 
 func (cl *color) Update(delta float64) {
@@ -46,6 +47,7 @@ func (cl *color) GetColors(divides int, beatScale, alpha float64) []color2.Color
 	}
 
 	hue := mutils.Sanitize(cl.BaseColor.Hue+cl.currentHue+flashOffset, 360)
+	cl.LastBaseHue = hue
 
 	offset := 360.0 / float64(divides)
 	if cl.EnableCustomHueOffset {

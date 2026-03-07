@@ -2,15 +2,16 @@ package sprite
 
 import (
 	"cmp"
+	"math"
+	"slices"
+	"sort"
+
 	"github.com/wieku/danser-go/framework/graphics/batch"
 	"github.com/wieku/danser-go/framework/graphics/texture"
 	"github.com/wieku/danser-go/framework/math/animation"
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/math32"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"slices"
-	"sort"
 )
 
 type Sprite struct {
@@ -32,6 +33,7 @@ type Sprite struct {
 	rotation float64
 	color    color2.Color
 	additive bool
+	hueShift float32
 
 	cutX      vector.Vector2d
 	cutY      vector.Vector2d
@@ -266,7 +268,9 @@ func (sprite *Sprite) Draw(time float64, batch *batch.QuadBatch) {
 		region.Height *= math32.Abs(region.V2-region.V1) / oldV
 	}
 
+	batch.SetHueShift(sprite.hueShift)
 	batch.DrawStObject(position, sprite.origin, sprite.scale.Abs(), flipX, flipY, sprite.rotation, color2.NewRGBA(sprite.color.R, sprite.color.G, sprite.color.B, alpha), sprite.additive, region)
+	batch.SetHueShift(0)
 }
 
 func (sprite *Sprite) GetOrigin() vector.Vector2d {
@@ -350,6 +354,10 @@ func (sprite *Sprite) SetCutOrigin(origin vector.Vector2d) {
 
 func (sprite *Sprite) SetAdditive(on bool) {
 	sprite.additive = on
+}
+
+func (sprite *Sprite) SetHueShift(shift float32) {
+	sprite.hueShift = shift
 }
 
 func (sprite *Sprite) GetStartTime() float64 {

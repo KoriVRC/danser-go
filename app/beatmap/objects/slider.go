@@ -2,6 +2,12 @@ package objects
 
 import (
 	"cmp"
+	"math"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
@@ -17,11 +23,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/math32"
 	"github.com/wieku/danser-go/framework/math/mutils"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"slices"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -554,6 +555,7 @@ func copySliderHOData(target, base *HitObject) {
 	target.ComboSet = base.ComboSet
 	target.ComboSetHax = base.ComboSetHax
 	target.HitObjectID = base.HitObjectID
+	target.TagIndex = base.TagIndex
 	target.StackLeniency = base.StackLeniency
 	target.StackIndexMap = base.StackIndexMap
 }
@@ -1037,8 +1039,23 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 	bodyInner := color2.NewL(0)
 	bodyOuter := color2.NewL(0)
 
+	mShift := float32(0)
+	if settings.DIVIDES > 1 {
+		mShift = circleColor.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+	}
+
+	if !settings.Objects.Colors.Sliders.Body.UseHitCircleColor {
+		bodyColor = bodyColor.Shift(mShift, 0, 0)
+	}
+
+	if !settings.Objects.Colors.Sliders.Border.UseHitCircleColor {
+		innerBorder = innerBorder.Shift(mShift, 0, 0)
+		outerBorder = outerBorder.Shift(mShift, 0, 0)
+	}
+
 	if slider.diff.CheckModActive(difficulty.Traceable) && slider.HitObjectID != 0 {
 		borderInner = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), circleColor)
+		borderInner = borderInner.Shift(mShift, 0, 0)
 		borderOuter = borderInner
 		bodyOpacityInner = 0
 		bodyOpacityOuter = 0
@@ -1057,16 +1074,24 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 			baseTrack = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), baseTrack)
 		}
 
+		borderOuter = borderOuter.Shift(mShift, 0, 0)
+		borderInner = borderOuter
+		baseTrack = baseTrack.Shift(mShift, 0, 0)
+
 		bodyOuter = baseTrack.Shade2(-0.1)
 		bodyInner = baseTrack.Shade2(0.5)
 	} else {
 		if settings.Objects.Colors.Sliders.Border.UseHitCircleColor {
 			borderInner = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderInner)
 			borderOuter = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderOuter)
+
+			borderInner = borderInner.Shift(mShift, 0, 0)
+			borderOuter = borderOuter.Shift(mShift, 0, 0)
 		}
 
 		if settings.Objects.Colors.Sliders.Body.UseHitCircleColor {
 			bodyColor = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), bodyColor)
+			bodyColor = bodyColor.Shift(mShift, 0, 0)
 		}
 
 		if settings.Objects.Colors.Sliders.Border.EnableCustomGradientOffset {
@@ -1081,6 +1106,14 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 	borderOuter.A = float32(colorAlpha)
 	bodyInner.A = float32(colorAlpha) * bodyOpacityInner
 	bodyOuter.A = float32(colorAlpha) * bodyOpacityOuter
+
+	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && slider.TagIndex >= 0 {
+		shift := float32(slider.TagIndex) * float32(settings.Cursor.TagColorOffset)
+		borderInner = borderInner.Shift(shift, 0, 0)
+		borderOuter = borderOuter.Shift(shift, 0, 0)
+		bodyInner = bodyInner.Shift(shift, 0, 0)
+		bodyOuter = bodyOuter.Shift(shift, 0, 0)
+	}
 
 	stackIndex := slider.GetStackIndexMod(slider.diff)
 	stackOffset := -float32(stackIndex) * float32(slider.diff.CircleRadius) / 10
@@ -1104,7 +1137,12 @@ func (slider *Slider) Draw(time float64, color color2.Color, batch *batch.QuadBa
 	if settings.DIVIDES < settings.Objects.Colors.MandalaTexturesTrigger {
 		if time < slider.EndTime {
 			if settings.Objects.Sliders.DrawScorePoints {
-				shifted := color.Shift(float32(settings.Objects.Colors.Sliders.ScorePointColorOffset), 0, 0)
+				tagShift := float32(0)
+				if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && slider.TagIndex >= 0 {
+					tagShift = float32(slider.TagIndex) * float32(settings.Cursor.TagColorOffset)
+				}
+
+				shifted := color.Shift(float32(settings.Objects.Colors.Sliders.ScorePointColorOffset)+tagShift, 0, 0)
 
 				scorePoint := skin.GetTexture("sliderscorepoint")
 
@@ -1169,18 +1207,35 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 		batch.DrawTexture(*skin.GetTexture("sliderb-nd"))
 	}
 
+	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && slider.TagIndex >= 0 {
+		color = color.Shift(float32(slider.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
+	}
+
+	if settings.DIVIDES > 1 {
+		color = color.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+	}
+
 	if settings.Skin.UseColorsFromSkin {
-		color := color2.NewL(1)
+		c := color2.NewL(1)
 
 		if skin.GetInfo().SliderBallTint {
-			color = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
+			c = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), c)
 		} else if skin.GetInfo().SliderBall != nil {
-			color = *skin.GetInfo().SliderBall
+			c = *skin.GetInfo().SliderBall
 		}
 
-		batch.SetColor(float64(color.R), float64(color.G), float64(color.B), alpha)
+		if settings.DIVIDES > 1 {
+			c = c.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+		}
+
+		batch.SetColor(float64(c.R), float64(c.G), float64(c.B), alpha)
 	} else if settings.Objects.Colors.Sliders.SliderBallTint {
 		color = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
+
+		if settings.DIVIDES > 1 && settings.Objects.Colors.Sliders.SliderBallTint {
+			color = color.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+		}
+
 		batch.SetColor(float64(color.R), float64(color.G), float64(color.B), alpha)
 	} else {
 		batch.SetColor(1, 1, 1, alpha)
@@ -1208,6 +1263,18 @@ func (slider *Slider) DrawApproach(time float64, color color2.Color, batch *batc
 	}
 
 	slider.startCircle.DrawApproach(time, color, batch)
+}
+
+func (slider *Slider) SetTagIndex(index int) {
+	slider.HitObject.SetTagIndex(index)
+
+	if slider.startCircle != nil {
+		slider.startCircle.SetTagIndex(index)
+	}
+
+	for _, circle := range slider.endCircles {
+		circle.SetTagIndex(index)
+	}
 }
 
 func (slider *Slider) GetType() Type {

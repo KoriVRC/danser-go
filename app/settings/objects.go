@@ -45,7 +45,8 @@ func initObjects() *objects {
 				FlashAmplitude:        100,
 				currentHue:            0,
 			},
-			UseComboColors: false,
+			UseComboColors:    false,
+			MatchTagPlayerHue: false,
 			ComboColors: []*HSV{
 				DefaultsFactory.InitHSV(),
 			},
@@ -141,6 +142,7 @@ type objectColors struct {
 	MandalaTexturesTrigger int     `label:"Use Mandala textures at x mirrors" string:"true"`      //5, minimum value of cursors needed to use more translucent texture
 	MandalaTexturesAlpha   float64 `label:"Mandala textures opacity" scale:"100" format:"%.0f%%"` //0.3
 	Color                  *color
+	MatchTagPlayerHue      bool   `label:"Match hit objects hue with tag cursor"`
 	UseComboColors         bool   `label:"Use custom combo colors"`
 	ComboColors            []*HSV `new:"InitHSV" label:"Custom combo colors" showif:"UseComboColors=true"`
 	UseSkinComboColors     bool

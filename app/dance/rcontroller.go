@@ -1,7 +1,15 @@
 package dance
 
 import (
-	"fmt"
+	"log"
+	"math"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/dance/input"
@@ -16,14 +24,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/mutils"
 	"github.com/wieku/danser-go/framework/math/vector"
 	"github.com/wieku/rplpa"
-	"log"
-	"math"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const replaysMaster = "replays"
@@ -94,14 +94,14 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 
 		replayD, _ := rplpa.ParseReplay(data)
 
-		if replayD.ReplayData == nil || len(replayD.ReplayData) == 0 {
+		if len(replayD.ReplayData) == 0 {
 			log.Println("Excluding for missing input data:", replayD.Username)
 		} else {
 			candidates = append(candidates, replayD)
 
 			localReplay = true
 		}
-	} else if settings.Knockout.MaxPlayers > 0 || (settings.KNOCKOUTREPLAYS != nil && len(settings.KNOCKOUTREPLAYS) > 0) { // ignore max player limit with new knockout
+	} else if settings.Knockout.MaxPlayers > 0 || len(settings.KNOCKOUTREPLAYS) > 0 { // ignore max player limit with new knockout
 		candidates = controller.getCandidates()
 	}
 
@@ -110,7 +110,7 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 			return candidates[i].Score > candidates[j].Score
 		})
 
-		if settings.KNOCKOUTREPLAYS == nil || len(settings.KNOCKOUTREPLAYS) == 0 { // limit only with classic knockout
+		if len(settings.KNOCKOUTREPLAYS) == 0 { // limit only with classic knockout
 			candidates = candidates[:min(len(candidates), settings.Knockout.MaxPlayers)]
 		}
 	}
@@ -118,7 +118,7 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 	displayedMods := ^difficulty.ParseMods(settings.Knockout.HideMods)
 
 	for i, replay := range candidates {
-		log.Println(fmt.Sprintf("Loading replay for \"%s\":", replay.Username))
+		log.Printf("Loading replay for \"%s\":\n", replay.Username)
 
 		control := NewSubControl()
 
@@ -250,7 +250,7 @@ func (controller *ReplayController) getCandidates() (candidates []*rplpa.Replay)
 			return
 		}
 
-		if replayD.ReplayData == nil || len(replayD.ReplayData) == 0 {
+		if len(replayD.ReplayData) == 0 {
 			log.Println("Excluding for missing input data:", replayD.Username)
 			return
 		}
@@ -258,7 +258,7 @@ func (controller *ReplayController) getCandidates() (candidates []*rplpa.Replay)
 		candidates = append(candidates, replayD)
 	}
 
-	if settings.KNOCKOUTREPLAYS != nil && len(settings.KNOCKOUTREPLAYS) > 0 {
+	if len(settings.KNOCKOUTREPLAYS) > 0 {
 		for _, r := range settings.KNOCKOUTREPLAYS {
 			tryAddReplay(r, false)
 		}
@@ -313,13 +313,13 @@ func loadFrames(subController *subControl, frames []*rplpa.ReplayData) {
 
 	meanFrameTime = subController.diff.GetModifiedTime(meanFrameTime)
 
-	log.Println(fmt.Sprintf("\tMedian cv frametime: %.2fms", meanFrameTime))
+	log.Printf("\tMedian cv frametime: %.2fms\n", meanFrameTime)
 
 	if meanFrameTime <= 13 && !subController.diff.CheckModActive(difficulty.Autoplay|difficulty.Relax|difficulty.Relax2) {
 		log.Println("\tWARNING!!! THIS REPLAY WAS PROBABLY TIMEWARPED!!!")
 	}
 
-	log.Println(fmt.Sprintf("\tReplay duration: %dms", duration))
+	log.Printf("\tReplay duration: %dms\n", duration)
 
 	subController.frames = frames
 }

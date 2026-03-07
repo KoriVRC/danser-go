@@ -1,6 +1,10 @@
 package containers
 
 import (
+	"log"
+	"math"
+	"sort"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
@@ -14,9 +18,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/animation/easing"
 	"github.com/wieku/danser-go/framework/math/vector"
 	"github.com/wieku/danser-go/framework/profiler"
-	"log"
-	"math"
-	"sort"
 )
 
 type renderableProxy struct {
@@ -242,7 +243,13 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 						}
 
 						slidersRendered = true
-						s.DrawBody(time, objectColors[j], bodyColors[j], borderColors[j], borderColors[ind], cameras[j], scale)
+
+						oColor := objectColors[j]
+						bColor := bodyColors[j]
+						brColor1 := borderColors[j]
+						brColor2 := borderColors[ind]
+
+						s.DrawBody(time, oColor, bColor, brColor1, brColor2, cameras[j], scale)
 					}
 				}
 			}
@@ -280,7 +287,9 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 
 					_, sp := container.renderables[i].renderable.(*objects.Spinner)
 					if !sp || j == 0 {
-						proxy.renderable.Draw(time, objectColors[j], batch)
+						oColor := objectColors[j]
+
+						proxy.renderable.Draw(time, oColor, batch)
 					}
 				} else if !settings.Objects.Sliders.SliderMerge {
 					if !enabled {
@@ -293,7 +302,13 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 					}
 
 					slidersRendered = true
-					proxy.renderable.(*objects.Slider).DrawBody(time, objectColors[j], bodyColors[j], borderColors[j], borderColors[ind], cameras[j], scale)
+
+					oColor := objectColors[j]
+					bColor := bodyColors[j]
+					brColor1 := borderColors[j]
+					brColor2 := borderColors[ind]
+
+					proxy.renderable.(*objects.Slider).DrawBody(time, oColor, bColor, brColor1, brColor2, cameras[j], scale)
 				}
 
 				if proxy.endTime <= time {

@@ -1,6 +1,9 @@
 package graphics
 
 import (
+	"math"
+	"sync"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/wieku/danser-go/app/settings"
 	"github.com/wieku/danser-go/app/skin"
@@ -16,8 +19,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/animation/easing"
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"sync"
 )
 
 const scaling = 0.625
@@ -69,6 +70,7 @@ type osuRenderer struct {
 	currentTime float64
 	sixtyDelta  float64
 	firstTime   bool
+	color       color2.Color
 }
 
 func newOsuRenderer() *osuRenderer {
@@ -109,7 +111,7 @@ func newOsuRenderer() *osuRenderer {
 
 	vao.Attach(osuShader)
 
-	cursor := &osuRenderer{LastPos: vector.NewVec2f(100, 100), Position: vector.NewVec2f(100, 100), vao: vao, mutex: &sync.Mutex{}, RendPos: vector.NewVec2f(100, 100), vertices: make([]float32, points*3), firstTime: true}
+	cursor := &osuRenderer{LastPos: vector.NewVec2f(100, 100), Position: vector.NewVec2f(100, 100), vao: vao, mutex: &sync.Mutex{}, RendPos: vector.NewVec2f(100, 100), vertices: make([]float32, points*3), firstTime: true, color: color2.NewL(1)}
 	cursor.vecSize = 3
 
 	cursor.trail = skin.GetTexture("cursortrail")
@@ -263,6 +265,13 @@ func (cursor *osuRenderer) UpdateRenderer() {
 }
 
 func (cursor *osuRenderer) DrawM(scale, expand float64, batch *batch.QuadBatch, color color2.Color, colorGlow color2.Color) {
+	cursor.color = color
+
+	hShift := float32(0.0)
+	if settings.Skin.Cursor.HueShift {
+		hShift = (color.GetHue() - float32(settings.Cursor.Colors.LastBaseHue)) / 360
+	}
+
 	scale *= settings.Skin.Cursor.Scale * scaling
 
 	scaleExpanded := scale
@@ -280,6 +289,7 @@ func (cursor *osuRenderer) DrawM(scale, expand float64, batch *batch.QuadBatch, 
 		osuShader.SetUniform("proj", batch.Projection)
 		osuShader.SetUniform("clock", float32(cursor.clock))
 		osuShader.SetUniform("alpha", color.A)
+		osuShader.SetUniform("hue_shift", hShift)
 
 		cursor.vao.Bind()
 
@@ -306,7 +316,15 @@ func (cursor *osuRenderer) DrawM(scale, expand float64, batch *batch.QuadBatch, 
 	}
 
 	batch.ResetTransform()
-	batch.SetColor(1, 1, 1, float64(color.A))
+	if settings.Skin.Cursor.HueShift {
+		batch.SetColor32(color.R, color.G, color.B, color.A)
+
+		for _, spr := range cursor.manager.GetProcessedSprites() {
+			spr.SetHueShift(hShift)
+		}
+	} else {
+		batch.SetColor(1, 1, 1, float64(color.A))
+	}
 	batch.SetScale(scaleExpanded, scaleExpanded)
 	batch.SetSubScale(1, 1)
 
@@ -320,10 +338,10 @@ func (cursor *osuRenderer) DrawM(scale, expand float64, batch *batch.QuadBatch, 
 		cursor.cursor.SetRotation(0)
 	}
 
+	cursor.cursor.SetHueShift(hShift)
+	cursor.middle.SetHueShift(hShift)
+
 	cursor.cursor.Draw(cursor.currentTime, batch)
-
-	batch.SetScale(scale, scale)
-
 	cursor.middle.Draw(cursor.currentTime, batch)
 
 	batch.End()
