@@ -862,7 +862,9 @@ func (player *Player) DrawMain(float64) {
 	cursorColors := settings.Cursor.GetColors(settings.DIVIDES, len(player.controller.GetCursors()), player.Scl, player.cursorGlider.GetValue())
 
 	if player.overlay != nil {
-		player.drawOverlayPart(player.overlay.DrawBackground, cursorColors, cursorCameras[0], 1)
+		for j := 0; j < settings.DIVIDES; j++ {
+			player.drawOverlayPart(player.overlay.DrawBackground, cursorColors[j*len(player.controller.GetCursors()):], cursorCameras[j], 1)
+		}
 	}
 
 	player.drawEpilepsyWarning()
@@ -899,13 +901,17 @@ func (player *Player) DrawMain(float64) {
 	}
 
 	if player.overlay != nil {
-		player.drawOverlayPart(player.overlay.DrawBeforeObjects, cursorColors, objectCameras[0], player.objectsAlphaFail.GetValue())
+		for j := 0; j < settings.DIVIDES; j++ {
+			player.drawOverlayPart(player.overlay.DrawBeforeObjects, cursorColors[j*len(player.controller.GetCursors()):], objectCameras[j], player.objectsAlphaFail.GetValue())
+		}
 	}
 
 	player.objectContainer.Draw(player.batch, player.mainCamera.GetProjectionView(), objectCameras, player.progressMsF, float32(player.Scl), float32(player.objectsAlpha.GetValue()*player.objectsAlphaFail.GetValue()))
 
 	if player.overlay != nil {
-		player.drawOverlayPart(player.overlay.DrawNormal, cursorColors, objectCameras[0], 1)
+		for j := 0; j < settings.DIVIDES; j++ {
+			player.drawOverlayPart(player.overlay.DrawNormal, cursorColors[j*len(player.controller.GetCursors()):], objectCameras[j], 1)
+		}
 	}
 
 	player.background.DrawOverlay(player.progressMsF, player.batch, bgAlpha, player.bgCamera.GetProjectionView())

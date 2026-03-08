@@ -1044,6 +1044,9 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 	mShift := float32(0)
 	if settings.DIVIDES > 1 {
 		mShift = circleColor.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && slider.TagIndex >= 0 {
+			mShift -= float32(slider.TagIndex) * float32(settings.Cursor.TagColorOffset)
+		}
 	}
 
 	if slider.diff.CheckModActive(difficulty.Traceable) && slider.HitObjectID != 0 {
@@ -1218,6 +1221,9 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 	mShift := float32(0)
 	if settings.DIVIDES > 1 {
 		mShift = color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && slider.TagIndex >= 0 {
+			mShift -= float32(slider.TagIndex) * float32(settings.Cursor.TagColorOffset)
+		}
 	}
 
 	if settings.Skin.UseColorsFromSkin {
@@ -1230,7 +1236,7 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 		}
 
 		if settings.DIVIDES > 1 {
-			c = c.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+			c = c.Shift(mShift, 0, 0)
 		}
 
 		batch.SetColor(float64(c.R), float64(c.G), float64(c.B), alpha)

@@ -285,12 +285,9 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 						profiler.EndGroup()
 					}
 
-					_, sp := container.renderables[i].renderable.(*objects.Spinner)
-					if !sp || j == 0 {
-						oColor := objectColors[j]
+					oColor := objectColors[j]
 
-						proxy.renderable.Draw(time, oColor, batch)
-					}
+					proxy.renderable.Draw(time, oColor, batch)
 				} else if !settings.Objects.Sliders.SliderMerge {
 					if !enabled {
 						enabled = true
@@ -311,13 +308,6 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 					proxy.renderable.(*objects.Slider).DrawBody(time, oColor, bColor, brColor1, brColor2, cameras[j], scale)
 				}
 
-				if proxy.endTime <= time {
-					if !proxy.isSliderBody {
-						container.countProcessed--
-					}
-
-					container.renderables = append(container.renderables[:i], container.renderables[(i+1):]...)
-				}
 			}
 
 			if enabled {
@@ -340,6 +330,16 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 						s.renderable.DrawApproach(time, objectColors[j], batch)
 					}
 				}
+			}
+		}
+
+		for i := len(container.renderables) - 1; i >= 0; i-- {
+			if container.renderables[i].endTime <= time {
+				if !container.renderables[i].isSliderBody {
+					container.countProcessed--
+				}
+
+				container.renderables = append(container.renderables[:i], container.renderables[(i+1):]...)
 			}
 		}
 

@@ -308,12 +308,18 @@ func (circle *Circle) Draw(time float64, color color2.Color, batch *batch.QuadBa
 	batch.SetColor(1, 1, 1, alpha)
 
 	calced := skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color)
+	isFallback := calced == color
+
 	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
-	if settings.DIVIDES > 1 && calced != color {
-		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+	if settings.DIVIDES > 1 && !isFallback {
+		shift := color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
+			shift -= float32(circle.TagIndex) * float32(settings.Cursor.TagColorOffset)
+		}
+		calced = calced.Shift(shift, 0, 0)
 	}
 
 	circle.hitCircle.SetColor(calced)
@@ -368,12 +374,18 @@ func (circle *Circle) DrawApproach(time float64, color color2.Color, batch *batc
 	batch.SetColor(1, 1, 1, float64(color.A))
 
 	calced := skin.GetColor(int(circle.ComboSet), int(circle.ComboSetHax), color)
+	isFallback := calced == color
+
 	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
-	if settings.DIVIDES > 1 && calced != color {
-		calced = calced.Shift(color.GetHue()-float32(settings.Objects.Colors.Color.LastBaseHue), 0, 0)
+	if settings.DIVIDES > 1 && !isFallback {
+		shift := color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
+			shift -= float32(circle.TagIndex) * float32(settings.Cursor.TagColorOffset)
+		}
+		calced = calced.Shift(shift, 0, 0)
 	}
 
 	circle.approachCircle.SetColor(calced)
@@ -383,10 +395,6 @@ func (circle *Circle) DrawApproach(time float64, color color2.Color, batch *batc
 
 func (circle *Circle) SetTagIndex(index int) {
 	circle.HitObject.SetTagIndex(index)
-
-	if circle.Parent != nil {
-		circle.Parent.SetTagIndex(index)
-	}
 }
 
 func (circle *Circle) GetType() Type {

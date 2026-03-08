@@ -2,6 +2,10 @@ package objects
 
 import (
 	"fmt"
+	"math"
+	"math/rand"
+	"strconv"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
@@ -16,9 +20,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/math32"
 	"github.com/wieku/danser-go/framework/math/mutils"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"math/rand"
-	"strconv"
 )
 
 const rpms = 0.00795
@@ -240,7 +241,12 @@ func (spinner *Spinner) Draw(time float64, color color2.Color, batch *batch.Quad
 
 	alpha := spinner.fade.GetValue() * float64(color.A)
 
-	batch.SetColor(1, 1, 1, alpha)
+	calced := color
+	if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && spinner.TagIndex >= 0 {
+		calced = calced.Shift(float32(spinner.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
+	}
+
+	batch.SetColor(float64(calced.R), float64(calced.G), float64(calced.B), alpha)
 
 	scale := batch.GetScale()
 	batch.SetScale(1, 1)
