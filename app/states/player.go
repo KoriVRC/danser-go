@@ -523,7 +523,7 @@ func NewPlayer(beatMap *beatmap.BeatMap) *Player {
 			log.Println("Failed to load online offset:", err2.Error())
 		} else if onlineBeatmap != nil {
 			player.onlineOffset = onlineBeatmap.Beatmapset.Offset
-			log.Println(fmt.Sprintf("Online offset loaded: %.0fms", player.onlineOffset))
+			log.Printf("Online offset loaded: %.0fms", player.onlineOffset)
 		}
 	}
 
@@ -835,7 +835,7 @@ func (player *Player) DrawMain(float64) {
 	}
 
 	if fps > 58 && timMs > 18 && !settings.RECORD {
-		log.Println(fmt.Sprintf("Slow frame detected! Frame time: %.3fms | Av. frame time: %.3fms", timMs, 1000.0/fps))
+		log.Printf("Slow frame detected! Frame time: %.3fms | Av. frame time: %.3fms", timMs, 1000.0/fps)
 	}
 
 	player.progressMs = int64(player.progressMsF)
@@ -855,7 +855,7 @@ func (player *Player) DrawMain(float64) {
 
 	if player.progressMsF > 0 {
 		timeDiff := player.progressMsF - player.lastProgressMsF
-		settings.Cursor.Colors.Update(timeDiff)
+		settings.Cursor.Colors.Update(player.progressMsF, timeDiff)
 		player.lastProgressMsF = player.progressMsF
 	}
 

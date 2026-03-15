@@ -2,6 +2,13 @@ package skin
 
 import (
 	"fmt"
+	"log"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/wieku/danser-go/app/settings"
 	"github.com/wieku/danser-go/framework/assets"
 	"github.com/wieku/danser-go/framework/bass"
@@ -10,12 +17,6 @@ import (
 	"github.com/wieku/danser-go/framework/graphics/font"
 	"github.com/wieku/danser-go/framework/graphics/texture"
 	"github.com/wieku/danser-go/framework/math/color"
-	"log"
-	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
 )
 
 type Source int
@@ -515,7 +516,7 @@ func GetColors() []color.Color {
 }
 
 func GetColor(comboSet, comboSetHax int, base color.Color) (col color.Color) {
-	col = color.NewRGB(base.R, base.G, base.B)
+	col = base
 
 	if settings.Skin.UseColorsFromSkin && len(GetColors()) > 0 {
 		cSet := comboSet
@@ -524,6 +525,7 @@ func GetColor(comboSet, comboSetHax int, base color.Color) (col color.Color) {
 		}
 
 		col = GetColors()[cSet%len(GetColors())]
+		col.A = base.A
 	} else if settings.Objects.Colors.UseComboColors || settings.Objects.Colors.UseSkinComboColors || settings.Objects.Colors.UseBeatmapComboColors {
 		cSet := comboSet
 		if settings.Objects.Colors.UseBeatmapComboColors {
@@ -539,6 +541,8 @@ func GetColor(comboSet, comboSetHax int, base color.Color) (col color.Color) {
 			r, g, b := color.HSVToRGB(float32(cHSV.Hue), float32(cHSV.Saturation), float32(cHSV.Value))
 			col = color.NewRGB(r, g, b)
 		}
+
+		col.A = base.A
 	}
 
 	return

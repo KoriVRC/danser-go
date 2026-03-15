@@ -2,15 +2,16 @@ package launcher
 
 import (
 	"encoding/json"
-	"github.com/wieku/danser-go/framework/env"
-	"github.com/wieku/danser-go/framework/files"
-	"github.com/wieku/danser-go/framework/math/mutils"
 	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/wieku/danser-go/framework/env"
+	"github.com/wieku/danser-go/framework/files"
+	"github.com/wieku/danser-go/framework/math/mutils"
 )
 
 var launcherConfig = &launcherConf{

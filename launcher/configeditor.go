@@ -3,6 +3,14 @@ package launcher
 import (
 	"cmp"
 	"fmt"
+	"os"
+	"path/filepath"
+	"reflect"
+	"regexp"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/sqweek/dialog"
@@ -14,13 +22,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/math32"
 	"github.com/wieku/danser-go/framework/math/mutils"
 	"github.com/wieku/danser-go/framework/platform"
-	"os"
-	"path/filepath"
-	"reflect"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const padY = 30
@@ -445,9 +446,9 @@ func (editor *settingsEditor) buildMainSection(jsonPath, sPath, name string, u r
 					goroutines.RunOS(func() {
 						switch result {
 						case osuapi.AuthError:
-							showMessage(mError, message)
+							showMessage(mError, "%s", message)
 						default:
-							showMessage(mInfo, message)
+							showMessage(mInfo, "%s", message)
 						}
 					})
 				})

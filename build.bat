@@ -39,7 +39,11 @@ set "GOARCH=amd64"
 set "CGO_ENABLED=1"
 set "CGO_LDFLAGS=-static-libstdc++ -static-libgcc -Wl,-Bstatic -lstdc++ -lpthread -Wl,-Bdynamic"
 set "WINDRESFLAGS=-F pe-x86-64"
-set "BUILD_DIR=dist\build-win"
+if "%DANSER_BUILD_DIR%" == "" (
+    set "BUILD_DIR=dist\build-win"
+) else (
+    set "BUILD_DIR=%DANSER_BUILD_DIR%"
+)
 set "TARGET_DIR=dist\artifacts"
 
 if "%DANSER_BUILD_MODE%" == "" set "DANSER_BUILD_MODE=0"
@@ -69,7 +73,7 @@ echo [1/4] Generating danser-core resources...
     echo     BEGIN
     echo       VALUE "CompanyName", "Wieku"
     echo       VALUE "FileDescription", "danser-core.dll"
-    echo       VALUE "LegalCopyright", "Wieku 2018-2024"
+    echo       VALUE "LegalCopyright", "Wieku 2018-2026"
     echo       VALUE "ProductName", "danser"
     echo       VALUE "ProductVersion", "%BUILD_NAME%"
     echo     END
@@ -115,7 +119,7 @@ echo [4/4] Generating application resources...
     echo     BEGIN
     echo       VALUE "CompanyName", "Wieku"
     echo       VALUE "FileDescription", "danser"
-    echo       VALUE "LegalCopyright", "Wieku 2018-2024"
+    echo       VALUE "LegalCopyright", "Wieku 2018-2026"
     echo       VALUE "ProductName", "danser"
     echo       VALUE "ProductVersion", "%BUILD_NAME%"
     echo     END
@@ -157,7 +161,7 @@ echo Generating Launcher resources...
     echo     BEGIN
     echo       VALUE "CompanyName", "Wieku"
     echo       VALUE "FileDescription", "danser launcher"
-    echo       VALUE "LegalCopyright", "Wieku 2018-2024"
+    echo       VALUE "LegalCopyright", "Wieku 2018-2026"
     echo       VALUE "ProductName", "danser"
     echo       VALUE "ProductVersion", "%BUILD_NAME%"
     echo     END

@@ -12,18 +12,27 @@ type User struct {
 }
 
 type Score struct {
-	ClassicTotalScore     int64   `json:"classic_total_score"`
-	BeatmapID             int64   `json:"beatmap_id"`
-	ID                    int64   `json:"id"`
-	UserID                int64   `json:"user_id"`
-	Accuracy              float64 `json:"accuracy"`
-	LegacyScoreID         int64   `json:"legacy_score_id"`
-	LegacyTotalScore      int64   `json:"legacy_total_score"`
-	MaxCombo              int64   `json:"max_combo"`
-	Score                 int64   `json:"score"`
-	TotalScore            int64   `json:"total_score"`
-	User                  User    `json:"user"`
-	TotalScoreWithoutMods int64   `json:"total_score_without_mods,omitempty"`
+	ClassicTotalScore     int64          `json:"classic_total_score"`
+	BeatmapID             int64          `json:"beatmap_id"`
+	ID                    int64          `json:"id"`
+	UserID                int64          `json:"user_id"`
+	Accuracy              float64        `json:"accuracy"`
+	LegacyScoreID         int64          `json:"legacy_score_id"`
+	LegacyTotalScore      int64          `json:"legacy_total_score"`
+	MaxCombo              int64          `json:"max_combo"`
+	Score                 int64          `json:"score"`
+	TotalScore            int64          `json:"total_score"`
+	User                  User           `json:"user"`
+	TotalScoreWithoutMods int64          `json:"total_score_without_mods,omitempty"`
+	Replay                bool           `json:"replay"`
+	Statistics            map[string]int `json:"statistics"`
+	Mods                  []ScoreMod     `json:"mods"`
+	CreatedAt             string         `json:"created_at"`
+	Perfect               bool           `json:"perfect"`
+}
+
+type ScoreMod struct {
+	Acronym string `json:"acronym"`
 }
 
 type LookupResult struct {
@@ -38,4 +47,24 @@ type LookupResult struct {
 type Beatmapset struct {
 	ID     int64   `json:"id"`
 	Offset float64 `json:"offset"`
+}
+
+type ScoreV1 struct {
+	ScoreID         string `json:"score_id"`
+	Score           string `json:"score"`
+	Username        string `json:"username"`
+	Count300        string `json:"count300"`
+	Count100        string `json:"count100"`
+	Count50         string `json:"count50"`
+	CountMiss       string `json:"countmiss"`
+	CountGeki       string `json:"countgeki"`
+	CountKatu       string `json:"countkatu"`
+	MaxCombo        string `json:"maxcombo"`
+	Perfect         string `json:"perfect"`
+	EnabledMods     string `json:"enabled_mods"`
+	UserID          string `json:"user_id"`
+	Date            string `json:"date"`
+	Rank            string `json:"rank"`
+	PP              string `json:"pp"`
+	ReplayAvailable string `json:"replay_available"`
 }

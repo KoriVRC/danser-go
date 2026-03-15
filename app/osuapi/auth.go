@@ -2,17 +2,18 @@ package osuapi
 
 import (
 	"context"
-	"github.com/wieku/danser-go/app/settings"
-	"github.com/wieku/danser-go/framework/goroutines"
-	"github.com/wieku/danser-go/framework/platform"
-	"github.com/wieku/danser-go/framework/util"
-	"golang.org/x/oauth2"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/wieku/danser-go/app/settings"
+	"github.com/wieku/danser-go/framework/goroutines"
+	"github.com/wieku/danser-go/framework/platform"
+	"github.com/wieku/danser-go/framework/util"
+	"golang.org/x/oauth2"
 )
 
 type AuthResult int
@@ -126,7 +127,7 @@ func authorizeCode(callback AuthCallback) {
 			if err2 != nil {
 				writeResponse(w, err2.Error())
 				callback(AuthError, err2.Error())
-				log.Println("ApiConnector: Failed to process auth:", err.Error())
+				log.Println("ApiConnector: Failed to process auth:", err2.Error())
 				return
 			}
 

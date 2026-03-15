@@ -28,9 +28,14 @@ type color struct {
 	FlashAmplitude        float64 `min:"-360" max:"360" format:"%.0f°"` //50, hue offset for flashes
 	currentHue            float64
 	LastBaseHue           float64
+	lastTime              float64
 }
 
-func (cl *color) Update(delta float64) {
+func (cl *color) Update(time, delta float64) {
+	if cl.lastTime == time {
+		return
+	}
+
 	if cl.EnableRainbow {
 		cl.currentHue += cl.RainbowSpeed / 1000.0 * delta
 
@@ -38,6 +43,8 @@ func (cl *color) Update(delta float64) {
 	} else {
 		cl.currentHue = 0
 	}
+
+	cl.lastTime = time
 }
 
 func (cl *color) GetColors(divides int, beatScale, alpha float64) []color2.Color {

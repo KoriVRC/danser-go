@@ -125,9 +125,9 @@ func (container *HitObjectContainer) Update(time float64) {
 	if time > 0 {
 		delta := time - container.lastTime
 
-		settings.Objects.Colors.Color.Update(delta)
-		settings.Objects.Colors.Sliders.Border.Color.Update(delta)
-		settings.Objects.Colors.Sliders.Body.Color.Update(delta)
+		settings.Objects.Colors.Color.Update(time, delta)
+		settings.Objects.Colors.Sliders.Border.Color.Update(time, delta)
+		settings.Objects.Colors.Sliders.Body.Color.Update(time, delta)
 
 		container.lastTime = time
 	}

@@ -3,6 +3,14 @@ package launcher
 import (
 	"cmp"
 	"fmt"
+	"math"
+	"math/rand"
+	"path/filepath"
+	"slices"
+	"strconv"
+	"strings"
+	"unicode"
+
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/settings"
@@ -13,13 +21,6 @@ import (
 	"github.com/wieku/danser-go/framework/platform"
 	"github.com/wieku/danser-go/framework/qpc"
 	"github.com/wieku/danser-go/framework/util"
-	"math"
-	"math/rand"
-	"path/filepath"
-	"slices"
-	"strconv"
-	"strings"
-	"unicode"
 )
 
 type SortBy int
@@ -527,25 +528,25 @@ func (m *songSelectPopup) showMapTooltip(bMap *beatmap.BeatMap) {
 			textColumn(fmt.Sprintf(text2, args...))
 		}
 
-		tRow("Stars: ", sR)
+		tRow("Stars: ", "%s", sR)
 		tRow("", "")
 
 		tRow("Objects: ", "%d", bMap.Circles+bMap.Sliders+bMap.Spinners)
-		tRow("AR: ", mutils.FormatWOZeros(bMap.Diff.GetAR(), 2))
+		tRow("AR: ", "%s", mutils.FormatWOZeros(bMap.Diff.GetAR(), 2))
 
 		tRow("Circles: ", "%d", bMap.Circles)
-		tRow("OD: ", mutils.FormatWOZeros(bMap.Diff.GetOD(), 2))
+		tRow("OD: ", "%s", mutils.FormatWOZeros(bMap.Diff.GetOD(), 2))
 
 		tRow("Sliders: ", "%d", bMap.Sliders)
-		tRow("CS: ", mutils.FormatWOZeros(bMap.Diff.GetCS(), 2))
+		tRow("CS: ", "%s", mutils.FormatWOZeros(bMap.Diff.GetCS(), 2))
 
 		tRow("Spinners: ", "%d", bMap.Spinners)
-		tRow("HP: ", mutils.FormatWOZeros(bMap.Diff.GetHP(), 2))
+		tRow("HP: ", "%s", mutils.FormatWOZeros(bMap.Diff.GetHP(), 2))
 
-		tRow("BPM: ", bpm)
+		tRow("BPM: ", "%s", bpm)
 		tRow("", "")
 
-		tRow("Length: ", util.FormatSeconds(bMap.Length/1000))
+		tRow("Length: ", "%s", util.FormatSeconds(bMap.Length/1000))
 		tRow("", "")
 
 		imgui.EndTable()

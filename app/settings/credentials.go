@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/wieku/danser-go/framework/env"
-	"github.com/wieku/danser-go/framework/files"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"github.com/wieku/danser-go/framework/env"
+	"github.com/wieku/danser-go/framework/files"
 )
 
 var Credentails = &credentials{
@@ -21,6 +22,7 @@ var Credentails = &credentials{
 type credentials struct {
 	ClientId     string
 	ClientSecret string `long:"true" password:"true"`
+	ApiKey       string `long:"true" password:"true" label:"API Key (v1)" tooltip:"Legacy API v1 key used for replay download fallbacks"`
 
 	AuthType string `combo:"ClientCredentials|Client credentials (Anonymous),AuthorizationCode|Authorization code (User authenticated)"`
 	//
@@ -29,6 +31,8 @@ type credentials struct {
 	AccessToken  string    `skip:"true" long:"true" password:"true"`
 	Expiry       time.Time `skip:"true"`
 	RefreshToken string    `skip:"true" long:"true" password:"true" showif:"AuthType=AuthorizationCode"`
+
+	SearchLocalReplays bool `label:"Search local osu! replays" tooltip:"Scan local osu! installation for replays before downloading"`
 }
 
 var srcDataCred []byte
@@ -54,7 +58,7 @@ func LoadCredentials() {
 }
 
 func loadCredentials(file *os.File) {
-	log.Println(fmt.Sprintf(`ApiConnector: Loading "%s"`, file.Name()))
+	log.Printf(`ApiConnector: Loading "%s"`, file.Name())
 
 	data, err := io.ReadAll(files.NewUnicodeReader(file))
 	if err != nil {
@@ -77,7 +81,7 @@ func SaveCredentials(forceSave bool) {
 	fPath := filepath.Join(env.ConfigDir(), "credentials.json")
 
 	if forceSave || !bytes.Equal(data, srcDataCred) { // Don't rewrite the file unless necessary
-		log.Println(fmt.Sprintf(`ApiConnector: Saving current settings to "%s"`, fPath))
+		log.Printf(`ApiConnector: Saving current settings to "%s"`, fPath)
 
 		srcDataCred = data
 

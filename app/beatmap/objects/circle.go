@@ -314,15 +314,12 @@ func (circle *Circle) Draw(time float64, color color2.Color, batch *batch.QuadBa
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
+	circle.hitCircle.SetColor(calced)
+
 	if settings.DIVIDES > 1 && !isFallback {
 		shift := color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
-		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
-			shift -= float32(circle.TagIndex) * float32(settings.Cursor.TagColorOffset)
-		}
-		calced = calced.Shift(shift, 0, 0)
+		circle.hitCircle.SetColor(calced.Shift(shift, 0, 0))
 	}
-
-	circle.hitCircle.SetColor(calced)
 
 	circle.hitCircle.Draw(time, batch)
 
@@ -380,15 +377,12 @@ func (circle *Circle) DrawApproach(time float64, color color2.Color, batch *batc
 		calced = calced.Shift(float32(circle.TagIndex)*float32(settings.Cursor.TagColorOffset), 0, 0)
 	}
 
+	circle.approachCircle.SetColor(calced)
+
 	if settings.DIVIDES > 1 && !isFallback {
 		shift := color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
-		if settings.TAG > 1 && settings.Objects.Colors.MatchTagPlayerHue && circle.TagIndex >= 0 {
-			shift -= float32(circle.TagIndex) * float32(settings.Cursor.TagColorOffset)
-		}
-		calced = calced.Shift(shift, 0, 0)
+		circle.approachCircle.SetColor(calced.Shift(shift, 0, 0))
 	}
-
-	circle.approachCircle.SetColor(calced)
 
 	circle.approachCircle.Draw(time, batch)
 }

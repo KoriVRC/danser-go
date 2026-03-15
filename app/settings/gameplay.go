@@ -377,7 +377,7 @@ type scoreBoard struct {
 	*hudElementOffset
 	Mode           string `combo:"Normal,Country,Friends" tooltip:"Country and Friends modes require osu!supporter and Authorization Code API Mode!"`
 	ModsOnly       bool   `label:"Show mod leaderboard"`
-	AlignRight     bool   `label:"Align to the right" label:"Simulates the second team of osu! multiplayer"`
+	AlignRight     bool   `label:"Align to the right (Simulates second team)"`
 	HideOthers     bool
 	ShowAvatars    bool
 	ExplosionScale float64 `min:"0.1" max:"2" scale:"100" format:"%.0f%%"`

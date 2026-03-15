@@ -2,13 +2,14 @@ package launcher
 
 import (
 	"encoding/json"
+	"strconv"
+	"strings"
+
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/framework/math/math32"
 	"github.com/wieku/rplpa"
 	"golang.org/x/exp/constraints"
-	"strconv"
-	"strings"
 )
 
 type floatParam param[float64]
@@ -180,9 +181,10 @@ func (b *builder) getArguments() (args []string) {
 
 		diffClone := b.diff.Clone()
 
-		if currentMode == Play {
+		switch currentMode {
+		case Play:
 			args = append(args, "-play")
-		} else if currentMode == Knockout {
+		case Knockout, KnockoutAutomatic:
 			var list []string
 
 			for _, r := range b.knockoutReplays {
@@ -193,7 +195,7 @@ func (b *builder) getArguments() (args []string) {
 
 			data, _ := json.Marshal(list)
 			args = append(args, "-knockout2", string(data))
-		} else if currentMode == DanserReplay {
+		case DanserReplay:
 			diffClone.AddMod(difficulty.Autoplay)
 		}
 

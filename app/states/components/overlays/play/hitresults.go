@@ -1,6 +1,9 @@
 package play
 
 import (
+	"math"
+	"math/rand"
+
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/beatmap/objects"
 	"github.com/wieku/danser-go/app/rulesets/osu"
@@ -12,8 +15,6 @@ import (
 	"github.com/wieku/danser-go/framework/math/animation/easing"
 	color2 "github.com/wieku/danser-go/framework/math/color"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"math"
-	"math/rand"
 )
 
 type HitResults struct {
@@ -161,8 +162,17 @@ func (results *HitResults) DrawBottom(batch *batch.QuadBatch, c []color2.Color, 
 	results.color = c[0]
 	results.alpha = alpha
 
+	shift := float32(0)
+	if settings.DIVIDES > 1 {
+		shift = results.color.GetHue() - float32(settings.Objects.Colors.Color.LastBaseHue)
+	}
+
+	for _, s := range results.bottom.GetProcessedSprites() {
+		s.SetHueShift(shift)
+	}
+
 	batch.ResetTransform()
-	batch.SetColor(1, 1, 1, alpha)
+	batch.SetColor(float64(results.color.R), float64(results.color.G), float64(results.color.B), alpha)
 
 	scale := results.diff.CircleRadius / 64
 	batch.SetScale(scale, scale)

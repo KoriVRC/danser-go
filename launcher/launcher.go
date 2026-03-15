@@ -5,6 +5,20 @@ import (
 	"cmp"
 	"errors"
 	"fmt"
+	"io"
+	"io/fs"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"slices"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
+	"unicode"
+
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/fsnotify/fsnotify"
 	"github.com/go-gl/gl/v3.3-core/gl"
@@ -36,19 +50,6 @@ import (
 	"github.com/wieku/danser-go/framework/qpc"
 	"github.com/wieku/danser-go/framework/util"
 	"github.com/wieku/rplpa"
-	"io"
-	"io/fs"
-	"log"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"slices"
-	"sort"
-	"strconv"
-	"strings"
-	"sync"
-	"time"
-	"unicode"
 )
 
 type Mode int
@@ -58,6 +59,7 @@ const (
 	DanserReplay
 	Replay
 	Knockout
+	KnockoutAutomatic
 	Play
 )
 
@@ -70,7 +72,9 @@ func (m Mode) String() string {
 	case Replay:
 		return "Watch a replay"
 	case Knockout:
-		return "Watch knockout"
+		return "Watch knockout with local replays"
+	case KnockoutAutomatic:
+		return "Watch knockout with map replays"
 	case Play:
 		return "Play osu!standard"
 	}
@@ -78,7 +82,7 @@ func (m Mode) String() string {
 	return ""
 }
 
-var modes = []Mode{CursorDance, DanserReplay, Replay, Knockout, Play}
+var modes = []Mode{CursorDance, DanserReplay, Replay, Knockout, KnockoutAutomatic, Play}
 
 type PMode int
 
@@ -732,7 +736,7 @@ func (l *launcher) drawMain() {
 						l.bld.removeReplay()
 					}
 
-					if m != Knockout {
+					if m != Knockout && m != KnockoutAutomatic {
 						l.bld.knockoutReplays = nil
 					}
 
@@ -783,7 +787,7 @@ func (l *launcher) drawMain() {
 				mapText = "Do you want to load new beatmap sets?"
 			}
 
-			reload = showMessage(mQuestion, "Changes in osu!'s Song directory have been detected.\n\n"+mapText)
+			reload = showMessage(mQuestion, "Changes in osu!'s Song directory have been detected.\n\n%s", mapText)
 		}
 
 		l.beatmapDirUpdated = false
@@ -944,7 +948,7 @@ func (l *launcher) trySelectReplayFromPath(p string) {
 
 	if err != nil {
 		e := []rune(err.Error())
-		showMessage(mError, string(unicode.ToUpper(e[0]))+string(e[1:]))
+		showMessage(mError, "%s", string(unicode.ToUpper(e[0]))+string(e[1:]))
 		return
 	}
 
@@ -973,12 +977,12 @@ func (l *launcher) trySelectReplaysFromPaths(p []string) {
 		showMessage(mError, "There were errors opening replays:\n%s", errorCollection)
 	}
 
-	if replays != nil && len(replays) > 0 {
+	if len(replays) > 0 {
 		found := false
 
 		for _, replay := range replays {
 			for _, bMap := range l.beatmaps {
-				if strings.ToLower(bMap.MD5) == strings.ToLower(replay.parsedReplay.BeatmapMD5) {
+				if strings.EqualFold(bMap.MD5, replay.parsedReplay.BeatmapMD5) {
 					launcherConfig.CurrentMode = Knockout
 					l.bld.setMap(bMap)
 
@@ -998,7 +1002,7 @@ func (l *launcher) trySelectReplaysFromPaths(p []string) {
 			var finalReplays []*knockoutReplay
 
 			for _, replay := range replays {
-				if strings.ToLower(l.bld.currentMap.MD5) == strings.ToLower(replay.parsedReplay.BeatmapMD5) {
+				if strings.EqualFold(l.bld.currentMap.MD5, replay.parsedReplay.BeatmapMD5) {
 					finalReplays = append(finalReplays, replay)
 				}
 			}
@@ -1015,7 +1019,7 @@ func (l *launcher) trySelectReplaysFromPaths(p []string) {
 
 func (l *launcher) trySelectReplay(replay *knockoutReplay) {
 	for _, bMap := range l.beatmaps {
-		if strings.ToLower(bMap.MD5) == strings.ToLower(replay.parsedReplay.BeatmapMD5) {
+		if strings.EqualFold(bMap.MD5, replay.parsedReplay.BeatmapMD5) {
 			launcherConfig.CurrentMode = Replay
 			l.bld.replayPath = replay.path
 			l.bld.setMap(bMap)
@@ -1101,7 +1105,7 @@ func (l *launcher) loadReplay(p string) (*knockoutReplay, error) {
 		return nil, errors.New("only osu!standard mode is supported")
 	}
 
-	if replay.ReplayData == nil || len(replay.ReplayData) < 2 {
+	if len(replay.ReplayData) < 2 {
 		return nil, errors.New("replay is missing input data")
 	}
 
@@ -1176,7 +1180,7 @@ func (l *launcher) drawLowerPanel() {
 	w, h := contentRegionMax().X, contentRegionMax().Y
 
 	if launcherConfig.CurrentMode != Play {
-		showProgress := launcherConfig.CurrentPMode == Record && l.showProgressBar
+		showProgress := l.showProgressBar
 
 		spacing := imgui.FrameHeightWithSpacing()
 		if showProgress {
@@ -1302,11 +1306,20 @@ func (l *launcher) drawLowerPanel() {
 					l.triangleSpeed.AddEventS(l.triangleSpeed.GetTime(), l.triangleSpeed.GetTime()+1000, 50, 1)
 
 					if launcherConfig.CurrentPMode != Watch {
-						l.startDanser()
+						if launcherConfig.CurrentMode == KnockoutAutomatic {
+							l.downloadKnockoutReplays()
+						} else {
+							l.startDanser()
+						}
 					} else {
 						goroutines.Run(func() {
 							time.Sleep(500 * time.Millisecond)
-							l.startDanser()
+
+							if launcherConfig.CurrentMode == KnockoutAutomatic {
+								l.downloadKnockoutReplays()
+							} else {
+								l.startDanser()
+							}
 						})
 					}
 				}
@@ -1617,7 +1630,7 @@ func (l *launcher) cloneConfig(toClone, name string) {
 	cConfig, err := l.loadConfig(toClone)
 
 	if err != nil {
-		showMessage(mError, err.Error())
+		showMessage(mError, "%s", err.Error())
 		return
 	}
 
@@ -1632,7 +1645,7 @@ func (l *launcher) renameConfig(toRename, name string) {
 	cConfig, err := l.loadConfig(toRename)
 
 	if err != nil {
-		showMessage(mError, err.Error())
+		showMessage(mError, "%s", err.Error())
 		return
 	}
 
@@ -1726,9 +1739,10 @@ func (l *launcher) startDanser() {
 		return
 	}
 
-	if launcherConfig.CurrentPMode == Watch {
+	switch launcherConfig.CurrentPMode {
+	case Watch:
 		l.win.Iconify()
-	} else if launcherConfig.CurrentPMode == Record {
+	case Record:
 		l.showProgressBar = true
 	}
 
@@ -1940,5 +1954,145 @@ func (l *launcher) setupWatcher() {
 
 		l.showBeatmapAlert = qpc.GetMilliTimeF() + delay
 		l.beatmapDirUpdated = true
+	})
+}
+
+func (l *launcher) downloadKnockoutReplays() {
+	l.danserRunning = true
+	l.recordStatus = "Fetching scores..."
+	l.showProgressBar = true
+	l.recordProgress = 0
+
+	goroutines.Run(func() {
+		if l.bld.currentMap.ID <= 0 {
+			goroutines.CallMain(func() {
+				showMessage(mError, "This map has no online ID, so it doesn't have a leaderboard.")
+				l.danserRunning = false
+				l.showProgressBar = false
+			})
+			return
+		}
+
+		scores, err := osuapi.GetScores(l.bld.currentMap.ID, false, osuapi.NormalMode, 50)
+		if err != nil {
+			goroutines.CallMain(func() {
+				showMessage(mError, "Failed to fetch scores: %s", err)
+				l.danserRunning = false
+				l.showProgressBar = false
+			})
+			return
+		}
+
+		if len(scores) == 0 {
+			goroutines.CallMain(func() {
+				showMessage(mError, "No scores found for this map. Replay download is impossible.")
+				l.danserRunning = false
+				l.showProgressBar = false
+			})
+			return
+		}
+
+		cacheDir := filepath.Join(env.DataDir(), "replays", "cache")
+		os.MkdirAll(cacheDir, 0755)
+
+		var knockoutReplays []*knockoutReplay
+		replaysDir := settings.General.GetReplaysDir()
+		localFiles, _ := os.ReadDir(replaysDir)
+
+		for i, score := range scores {
+			l.recordStatus = fmt.Sprintf("Processing replays... (%d/%d)", i+1, len(scores))
+			l.recordProgress = float32(i) / float32(len(scores))
+
+			rPath := filepath.Join(cacheDir, strconv.FormatInt(score.ID, 10)+".osr")
+
+			found := false
+			if _, err := os.Stat(rPath); err == nil {
+				found = true
+			} else if settings.Credentails.SearchLocalReplays {
+				// Search in local osu! replays if enabled
+				for _, f := range localFiles {
+					if !f.IsDir() && strings.HasPrefix(f.Name(), score.User.Username) && strings.HasSuffix(f.Name(), ".osr") {
+						testPath := filepath.Join(replaysDir, f.Name())
+						rData, err := os.ReadFile(testPath)
+						if err == nil {
+							replay, err := rplpa.ParseReplay(rData)
+							if err == nil && replay.BeatmapMD5 == l.bld.currentMap.MD5 && replay.Username == score.User.Username {
+								// Match found! Copy to cache to avoid re-parsing next time
+								if f, err := os.Create(rPath); err == nil {
+									f.Write(rData)
+									f.Close()
+									found = true
+									break
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if !found {
+				var respBody io.ReadCloser
+				var err error
+
+				if settings.Credentails.ApiKey != "" {
+					log.Printf("OsuApi: Attempting V1 Reconstruction for %s...", score.User.Username)
+					respBody, err = osuapi.DownloadReplayV1(l.bld.currentMap.ID, score, l.bld.currentMap.MD5, 0)
+					if err == nil {
+						log.Printf("OsuApi: Successfully reconstructed replay for %s via V1!", score.User.Username)
+						// V1 API is strict (10 req/min). Wait 6.5s to be safe.
+						time.Sleep(6500 * time.Millisecond)
+					} else {
+						log.Printf("OsuApi: V1 Reconstruction failed for %s (%v). Falling back to V2/Mirror...", score.User.Username, err)
+					}
+				}
+
+				if respBody == nil {
+					if !score.Replay {
+						log.Printf("OsuApi: Skipping replay for %s (no replay available according to API)", score.User.Username)
+						continue
+					}
+
+					respBody, err = osuapi.DownloadReplay(score.ID)
+				}
+
+				if err != nil {
+					log.Println("Failed to download replay", score.ID, ":", err)
+					continue
+				}
+
+				f, err := os.Create(rPath)
+				if err != nil {
+					if respBody != nil {
+						respBody.Close()
+					}
+					log.Println("Failed to create file", rPath, ":", err)
+					continue
+				}
+				io.Copy(f, respBody)
+				f.Close()
+				respBody.Close()
+
+				time.Sleep(100 * time.Millisecond)
+			}
+
+			kr, err := l.loadReplay(rPath)
+			if err == nil {
+				knockoutReplays = append(knockoutReplays, kr)
+			}
+		}
+
+		if len(knockoutReplays) == 0 {
+			goroutines.CallMain(func() {
+				showMessage(mError, "Failed to download any replays!")
+				l.danserRunning = false
+				l.showProgressBar = false
+			})
+			return
+		}
+
+		goroutines.CallMain(func() {
+			l.bld.knockoutReplays = knockoutReplays
+			l.startDanser()
+		})
 	})
 }

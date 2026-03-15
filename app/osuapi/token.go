@@ -2,9 +2,10 @@ package osuapi
 
 import (
 	"context"
+	"time"
+
 	"github.com/wieku/danser-go/app/settings"
 	"golang.org/x/oauth2"
-	"time"
 )
 
 func getToken() *oauth2.Token {
@@ -13,7 +14,7 @@ func getToken() *oauth2.Token {
 		TokenType:    "Bearer",
 		RefreshToken: settings.Credentails.RefreshToken,
 		Expiry:       settings.Credentails.Expiry,
-		ExpiresIn:    int64(settings.Credentails.Expiry.Sub(time.Now()).Seconds()),
+		ExpiresIn:    int64(time.Until(settings.Credentails.Expiry).Seconds()),
 	}
 }
 
@@ -64,7 +65,7 @@ func TryRefreshToken() error {
 func tryUpdateToken(token *oauth2.Token) {
 	if settings.Credentails.AccessToken == token.AccessToken &&
 		settings.Credentails.RefreshToken == token.RefreshToken &&
-		settings.Credentails.Expiry == token.Expiry {
+		settings.Credentails.Expiry.Equal(token.Expiry) {
 		return
 	}
 

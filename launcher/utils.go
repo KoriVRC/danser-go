@@ -2,15 +2,16 @@ package launcher
 
 import (
 	"fmt"
+	"math"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/AllenDang/cimgui-go/imgui"
 	"github.com/sqweek/dialog"
 	"github.com/wieku/danser-go/app/utils"
 	"github.com/wieku/danser-go/framework/env"
 	"github.com/wieku/danser-go/framework/platform"
-	"math"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 type messageType int
@@ -26,19 +27,19 @@ func showMessage(typ messageType, format string, args ...any) bool {
 
 	switch typ {
 	case mInfo:
-		dialog.Message(message).Info()
+		dialog.Message("%s", message).Info()
 	case mError:
 		if urlIndex := strings.Index(message, "http"); urlIndex > -1 {
-			if dialog.Message(message + "\n\nDo you want to go there?").ErrorYesNo() {
+			if dialog.Message("%s", message+"\n\nDo you want to go there?").ErrorYesNo() {
 				url := message[urlIndex:]
 				platform.OpenURL(url)
 				return true
 			}
 		} else {
-			dialog.Message(message).Error()
+			dialog.Message("%s", message).Error()
 		}
 	case mQuestion:
-		return dialog.Message(message).YesNo()
+		return dialog.Message("%s", message).YesNo()
 	}
 
 	return false
@@ -53,7 +54,7 @@ func checkForUpdates(pingUpToDate bool) {
 			showMessage(mInfo, "You're using the newest version of danser.")
 		}
 	case utils.Failed:
-		showMessage(mError, "Can't get version from GitHub:", err)
+		showMessage(mError, "Can't get version from GitHub: %v", err)
 	case utils.Snapshot:
 		if showMessage(mQuestion, "You're using a snapshot version of danser.\nFor newer version of snapshots please visit the official danser discord server at: %s\n\nDo you want to go there?", url) {
 			platform.OpenURL(url)

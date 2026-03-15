@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/itchio/lzma"
-	"github.com/wieku/danser-go/framework/files"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/itchio/lzma"
+	"github.com/wieku/danser-go/framework/files"
 )
 
 type defaultsFactory struct{}
@@ -56,7 +57,7 @@ type CombinedConfig struct {
 }
 
 func LoadConfig(file *os.File) (*Config, error) {
-	log.Println(fmt.Sprintf(`SettingsManager: Loading "%s"`, file.Name()))
+	log.Printf(`SettingsManager: Loading "%s"`, file.Name())
 
 	data, err := io.ReadAll(files.NewUnicodeReader(file))
 	if err != nil {
@@ -82,7 +83,7 @@ func LoadConfig(file *os.File) (*Config, error) {
 		config.General.OsuReplaysDir = filepath.Join(filepath.Dir(config.General.OsuSongsDir), "Replays")
 	}
 
-	log.Println(fmt.Sprintf(`SettingsManager: "%s" loaded!`, file.Name()))
+	log.Printf(`SettingsManager: "%s" loaded!`, file.Name())
 
 	return config, nil
 }
@@ -262,7 +263,7 @@ func (config *Config) Save(path string, forceSave bool) {
 	}
 
 	if forceSave || !bytes.Equal(data, config.srcData) { // Don't rewrite the file unless necessary
-		log.Println(fmt.Sprintf(`SettingsManager: Saving settings to "%s"`, path))
+		log.Printf(`SettingsManager: Saving settings to "%s"`, path)
 
 		config.srcData = data
 
