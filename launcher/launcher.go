@@ -493,6 +493,7 @@ func (l *launcher) loadBeatmaps() {
 
 func (l *launcher) loadLatestReplay() {
 	replaysDir := l.currentConfig.General.GetReplaysDir()
+	log.Println("Launcher: Attempting to load latest replay from", replaysDir)
 
 	type lastModPath struct {
 		tStamp time.Time
@@ -503,11 +504,12 @@ func (l *launcher) loadLatestReplay() {
 
 	entries, err := os.ReadDir(replaysDir)
 	if err != nil {
+		log.Println("Launcher: Failed to read replays directory:", err)
 		return
 	}
 
 	for _, d := range entries {
-		if !d.IsDir() && strings.HasSuffix(d.Name(), ".osr") {
+		if !d.IsDir() && strings.HasSuffix(strings.ToLower(d.Name()), ".osr") {
 			if info, err1 := d.Info(); err1 == nil {
 				list = append(list, &lastModPath{
 					tStamp: info.ModTime(),
@@ -517,7 +519,9 @@ func (l *launcher) loadLatestReplay() {
 		}
 	}
 
-	if list == nil {
+	log.Printf("Launcher: Found %d replays", len(list))
+
+	if list == nil || len(list) == 0 {
 		return
 	}
 
@@ -525,12 +529,34 @@ func (l *launcher) loadLatestReplay() {
 		return -a.tStamp.Compare(b.tStamp)
 	})
 
+	log.Println("Launcher: Newest replay is", list[0].name)
+
 	// Load the newest that can be used
 	for _, lMP := range list {
-		r, err := l.loadReplay(filepath.Join(replaysDir, lMP.name))
+		rPath := filepath.Join(replaysDir, lMP.name)
+		r, err := l.loadReplay(rPath)
 		if err == nil {
-			l.trySelectReplay(r)
-			break
+			log.Println("Launcher: Successfully parsed replay", lMP.name, "- searching for map")
+			
+			found := false
+			for _, bMap := range l.beatmaps {
+				if strings.EqualFold(bMap.MD5, r.parsedReplay.BeatmapMD5) {
+					launcherConfig.CurrentMode = Replay
+					l.bld.replayPath = r.path
+					l.bld.setMap(bMap)
+					l.bld.setReplay(r.parsedReplay)
+					found = true
+					break
+				}
+			}
+
+			if found {
+				log.Println("Launcher: Successfully selected replay!")
+				break
+			}
+			log.Println("Launcher: Failed to find map for replay, trying next...")
+		} else {
+			log.Println("Launcher: Failed to parse replay", lMP.name, ":", err)
 		}
 	}
 }
