@@ -43,7 +43,7 @@ preRC='#include "winuser.h"
                 VALUE "FileDescription", "danser'
 
 postRC='"
-      VALUE "LegalCopyright", "Wieku 2018-2024"
+      VALUE "LegalCopyright", "Wieku 2018-2026"
       VALUE "ProductName", "danser"
       VALUE "ProductVersion", "'$build'"
     END
@@ -76,7 +76,7 @@ rm -f danser.syso
 
 $resgen <<< $resDanser
 
-cp {bass.dll,bass_fx.dll,bassmix.dll,libyuv.dll} $BUILD_DIR/
+cp {bass.dll,bass_fx.dll,bassmix.dll,libyuv.dll,SDL3.dll} $BUILD_DIR/
 
 $CC <<< --verbose -O3 -o $BUILD_DIR/danser-cli.exe -I. cmain/main_danser.c -I$BUILD_DIR/ -L$BUILD_DIR/ -ldanser-core $BUILD_DIR/danser.syso -municode
 

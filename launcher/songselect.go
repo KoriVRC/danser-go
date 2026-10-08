@@ -12,6 +12,7 @@ import (
 	"unicode"
 
 	"github.com/AllenDang/cimgui-go/imgui"
+
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/settings"
 	"github.com/wieku/danser-go/framework/bass"
@@ -96,6 +97,7 @@ type songSelectPopup struct {
 	volume        *animation.Glider
 	stopTime      float64
 	thumbTex      *texture.TextureSingle
+	texRef        *imgui.TextureRef
 	lastThumbPath string
 	drawTex       bool
 	lastScrollY   float32
@@ -147,7 +149,7 @@ func (m *songSelectPopup) update() {
 }
 
 func (m *songSelectPopup) drawSongSelect() {
-	imgui.PushFont(Font32)
+	imgui.PushFont(Font, 32)
 
 	imgui.SetNextItemWidth(-1)
 	if searchBox("##searchpath", &m.searchStr) {
@@ -161,7 +163,7 @@ func (m *songSelectPopup) drawSongSelect() {
 
 	imgui.PopFont()
 
-	imgui.PushFont(Font20)
+	imgui.PushFont(Font, 20)
 
 	if imgui.BeginTableV("sortrandom", 2, 0, vec2(-1, 0), -1) {
 		imgui.TableSetupColumnV("##sortrandom1", imgui.TableColumnFlagsWidthStretch, 0, imgui.ID(0))
@@ -195,8 +197,7 @@ func (m *songSelectPopup) drawSongSelect() {
 
 		imgui.SameLine()
 
-		ImIO.SetFontGlobalScale(20.0 / 32)
-		imgui.PushFont(FontAw)
+		imgui.PushFont(FontAw, 20)
 
 		sDir := "\uF882"
 		if launcherConfig.SortAscending {
@@ -210,7 +211,6 @@ func (m *songSelectPopup) drawSongSelect() {
 			saveLauncherConfig()
 		}
 
-		ImIO.SetFontGlobalScale(1)
 		imgui.PopFont()
 
 		imgui.TableNextColumn()
@@ -284,14 +284,7 @@ func (m *songSelectPopup) drawSongSelect() {
 				continue
 			}
 
-			isPreviewed := false
-
-			for _, bMap := range b.bMaps {
-				if bMap == m.prevMap {
-					isPreviewed = true
-					break
-				}
-			}
+			isPreviewed := slices.Contains(b.bMaps, m.prevMap)
 
 			c1 := imgui.CursorPos().Y
 
@@ -300,7 +293,7 @@ func (m *songSelectPopup) drawSongSelect() {
 			imgui.BeginGroup()
 
 			if imgui.BeginTableV("bsetstab"+rId, 2, imgui.TableFlagsSizingStretchProp, vec2(-1, 0), -1) {
-				imgui.PushFont(Font32)
+				imgui.PushFont(Font, 32)
 
 				imgui.TableSetupColumnV("##hhh"+rId, imgui.TableColumnFlagsWidthStretch, 0, imgui.ID(0))
 				imgui.TableSetupColumnV("##hhhg"+rId, imgui.TableColumnFlagsWidthFixed, imgui.FrameHeight()*2+imgui.CurrentStyle().ItemSpacing().X, imgui.ID(1))
@@ -318,7 +311,7 @@ func (m *songSelectPopup) drawSongSelect() {
 				imgui.TableNextColumn()
 
 				if b.hovered {
-					imgui.PushFont(Font20)
+					imgui.PushFont(Font, 20)
 
 					imgui.PushStyleVarFloat(imgui.StyleVarFrameBorderSize, 0)
 					imgui.PushStyleColorVec4(imgui.ColButton, vec4(0, 0, 0, 1))
@@ -331,8 +324,7 @@ func (m *songSelectPopup) drawSongSelect() {
 						imgui.BeginDisabled()
 					}
 
-					ImIO.SetFontGlobalScale(16.0 / 32)
-					imgui.PushFont(FontAw)
+					imgui.PushFont(FontAw, 16)
 
 					imgui.AlignTextToFramePadding()
 					if imgui.ButtonV("\uF7A2##"+rId, vec2(imgui.FrameHeight()*2, imgui.FrameHeight()*2)) {
@@ -343,7 +335,6 @@ func (m *songSelectPopup) drawSongSelect() {
 						imgui.EndDisabled()
 					}
 
-					ImIO.SetFontGlobalScale(1)
 					imgui.PopFont()
 
 					if imgui.IsItemHoveredV(imgui.HoveredFlagsAllowWhenDisabled) {
@@ -365,8 +356,7 @@ func (m *songSelectPopup) drawSongSelect() {
 						name = "\uF04D"
 					}
 
-					ImIO.SetFontGlobalScale(16.0 / 32)
-					imgui.PushFont(FontAw)
+					imgui.PushFont(FontAw, 16)
 
 					imgui.AlignTextToFramePadding()
 					if imgui.ButtonV(name+"##"+rId, vec2(imgui.FrameHeight()*2, imgui.FrameHeight()*2)) {
@@ -377,7 +367,6 @@ func (m *songSelectPopup) drawSongSelect() {
 						}
 					}
 
-					ImIO.SetFontGlobalScale(1)
 					imgui.PopFont()
 
 					if imgui.IsItemHoveredV(imgui.HoveredFlagsAllowWhenDisabled) {
@@ -405,7 +394,7 @@ func (m *songSelectPopup) drawSongSelect() {
 
 			imgui.TextUnformatted(fmt.Sprintf("%s // %s", b.bMaps[0].Artist, b.bMaps[0].Creator))
 
-			imgui.PushFont(Font20)
+			imgui.PushFont(Font, 20)
 
 			for j, bMap := range b.bMaps {
 				fDiffName := ">   " + bMap.Difficulty
@@ -461,7 +450,7 @@ func (m *songSelectPopup) drawSongSelect() {
 }
 
 func (m *songSelectPopup) showMapTooltip(bMap *beatmap.BeatMap) {
-	imgui.PushFont(Font24)
+	imgui.PushFont(Font, 24)
 
 	const tgAsp = float32(4.0 / 3)
 
@@ -474,12 +463,15 @@ func (m *songSelectPopup) showMapTooltip(bMap *beatmap.BeatMap) {
 	if m.lastThumbPath != thumbPath {
 		if m.thumbTex != nil {
 			m.thumbTex.Dispose()
+			m.texRef.Destroy()
 			m.thumbTex = nil
 		}
 
 		pX, err := texture.NewPixmapFileString(thumbPath)
 		if err == nil {
 			m.thumbTex = texture.LoadTextureSingle(pX.RGBA(), 4)
+
+			m.texRef = imgui.NewTextureRefTextureID(imgui.TextureID(m.thumbTex.GetID()))
 
 			pX.Dispose()
 		}
@@ -502,7 +494,7 @@ func (m *songSelectPopup) showMapTooltip(bMap *beatmap.BeatMap) {
 			uvBR.Y = 1 - uvTL.X
 		}
 
-		imgui.ImageV(imgui.TextureID{Data: uintptr(m.thumbTex.GetID())}, vec2(200*tgAsp, 200), uvTL, uvBR, imgui.Vec4{X: 1, Y: 1, Z: 1, W: 0.3}, imgui.Vec4{})
+		imgui.ImageWithBgV(*m.texRef, vec2(200*tgAsp, 200), uvTL, uvBR, imgui.Vec4{}, imgui.Vec4{X: 1, Y: 1, Z: 1, W: 0.3})
 	}
 
 	imgui.SetCursorPos(cPos)
@@ -678,7 +670,8 @@ func compareStrings(l, r string) int {
 	rRa := []rune(r)
 	lenM := min(len(lRa), len(rRa))
 
-	for i := 0; i < lenM; i++ {
+	for i := range lenM {
+		cmp.Compare(unicode.ToLower(lRa[i]), unicode.ToLower(rRa[i]))
 		cL := unicode.ToLower(lRa[i])
 		cR := unicode.ToLower(rRa[i])
 		if cL < cR {

@@ -1,6 +1,8 @@
 package dance
 
 import (
+
+	"fmt"
 	"log"
 	"math"
 	"os"
@@ -9,6 +11,9 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+
+	"github.com/wieku/rplpa"
 
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
@@ -23,7 +28,7 @@ import (
 	"github.com/wieku/danser-go/framework/files"
 	"github.com/wieku/danser-go/framework/math/mutils"
 	"github.com/wieku/danser-go/framework/math/vector"
-	"github.com/wieku/rplpa"
+
 )
 
 const replaysMaster = "replays"
@@ -146,6 +151,8 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 			control.modifiedMods = true
 		}
 
+		control.diff.ScoreVersion = replay.OsuVersion
+
 		log.Println("\tMods:", control.diff.GetModString())
 
 		loadFrames(control, replay.ReplayData)
@@ -155,7 +162,7 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 		control.newHandling = replay.OsuVersion >= 20190506 // This was when slider scoring was changed, so *I think* replay handling as well: https://osu.ppy.sh/home/changelog/cuttingedge/20190506
 		control.oldSpinners = replay.OsuVersion < 20190510  // This was when spinner scoring was changed: https://osu.ppy.sh/home/changelog/cuttingedge/20190510.2
 
-		controller.replays = append(controller.replays, RpData{replay.Username, replay.Username + string(rune(unicode.MaxRune-i)), (control.diff.Mods & displayedMods).String(), control.diff.Mods, 100, 0, int64(mxCombo), osu.NONE, replay.ScoreID, replay.Timestamp})
+		controller.replays = append(controller.replays, RpData{replay.Username, replay.Username + string(rune(unicode.MaxRune-i)), (control.diff.Mods & displayedMods).String(), control.diff.Mods, 1, 0, int64(mxCombo), osu.NONE, replay.ScoreID, replay.Timestamp})
 		controller.controllers = append(controller.controllers, control)
 
 		log.Println("\tExpected score:", replay.Score)
@@ -169,7 +176,7 @@ func (controller *ReplayController) SetBeatMap(beatMap *beatmap.BeatMap) {
 		control.danceController = NewGenericController()
 		control.danceController.SetBeatMap(beatMap)
 
-		controller.replays = append([]RpData{{settings.Knockout.DanserName, settings.Knockout.DanserName, control.diff.GetModString(), control.diff.Mods, 100, 0, 0, osu.NONE, -1, time.Now()}}, controller.replays...)
+		controller.replays = append([]RpData{{settings.Knockout.DanserName, settings.Knockout.DanserName, control.diff.GetModString(), control.diff.Mods, 1, 0, 0, osu.NONE, -1, time.Now()}}, controller.replays...)
 		controller.controllers = append([]*subControl{control}, controller.controllers...)
 
 		if len(candidates) == 0 {
@@ -240,7 +247,23 @@ func (controller *ReplayController) getCandidates() (candidates []*rplpa.Replay)
 			return
 		}
 
-		if !difficulty.Modifier(replayD.Mods).Compatible() || difficulty.Modifier(replayD.Mods).Active(difficulty.Target) {
+		mods := difficulty.Modifier(replayD.Mods)
+		if replayD.OsuVersion >= 30000000 {
+			if replayD.ScoreInfo != nil && len(replayD.ScoreInfo.Mods) > 0 {
+				modsNew := make([]rplpa.ModInfo, 0, len(replayD.ScoreInfo.Mods))
+				for _, mod := range replayD.ScoreInfo.Mods {
+					modsNew = append(modsNew, *mod)
+				}
+
+				diff := difficulty.NewDifficulty(1, 1, 1, 1)
+				diff.SetMods2(modsNew)
+				mods = diff.Mods
+			}
+
+			mods |= difficulty.Lazer
+		}
+
+		if !mods.Compatible() {
 			log.Println("Excluding for incompatible mods:", replayD.Username)
 			return
 		}
@@ -313,7 +336,10 @@ func loadFrames(subController *subControl, frames []*rplpa.ReplayData) {
 
 	meanFrameTime = subController.diff.GetModifiedTime(meanFrameTime)
 
-	log.Printf("\tMedian cv frametime: %.2fms\n", meanFrameTime)
+
+	log.Println("\tFrame count:", len(times))
+
+	log.Println(fmt.Sprintf("\tMedian cv frametime: %.2fms", meanFrameTime))
 
 	if meanFrameTime <= 13 && !subController.diff.CheckModActive(difficulty.Autoplay|difficulty.Relax|difficulty.Relax2) {
 		log.Println("\tWARNING!!! THIS REPLAY WAS PROBABLY TIMEWARPED!!!")
@@ -470,6 +496,10 @@ func (controller *ReplayController) processLazer(i int, c *subControl, nTime flo
 
 	if c.replayIndex < len(c.frames) {
 		for c.replayIndex < len(c.frames) && c.replayTime+c.frames[c.replayIndex].Time <= math.Floor(nTime) {
+			if c.replayIndex >= len(c.frames)-1 {
+				controller.ruleset.PlayerStopped(controller.cursors[i], int64(c.replayTime))
+			}
+
 			frame := c.frames[c.replayIndex]
 			c.replayTime += frame.Time
 
@@ -521,10 +551,6 @@ func (controller *ReplayController) processLazer(i int, c *subControl, nTime flo
 
 			controller.cursors[i].IsReplayFrame = false
 		}
-
-		if c.replayIndex >= len(c.frames) {
-			controller.ruleset.PlayerStopped(controller.cursors[i], int64(c.replayTime))
-		}
 	} else {
 		controller.cursors[i].LeftKey = false
 		controller.cursors[i].RightKey = false
@@ -550,6 +576,10 @@ func (controller *ReplayController) processStable(i int, c *subControl, nTime fl
 
 	if c.replayIndex < len(c.frames) {
 		for c.replayIndex < len(c.frames) && c.replayTime+c.frames[c.replayIndex].Time <= math.Floor(nTime) {
+			if c.replayIndex >= len(c.frames)-1 {
+				controller.ruleset.PlayerStopped(controller.cursors[i], int64(c.replayTime))
+			}
+
 			frame := c.frames[c.replayIndex]
 			c.replayTime += frame.Time
 
@@ -622,10 +652,6 @@ func (controller *ReplayController) processStable(i int, c *subControl, nTime fl
 			}
 
 			controller.cursors[i].IsReplayFrame = false
-		}
-
-		if c.replayIndex >= len(c.frames) {
-			controller.ruleset.PlayerStopped(controller.cursors[i], int64(c.replayTime))
 		}
 	} else {
 		controller.cursors[i].LeftKey = false

@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/graphics/sliderrenderer"
@@ -151,7 +152,7 @@ func NewSlider(data []string) *Slider {
 
 		n := min(len(subData), len(slider.samples))
 
-		for i := 0; i < n; i++ {
+		for i := range n {
 			sample, _ := strconv.Atoi(subData[i])
 			slider.samples[i] = sample
 		}
@@ -162,7 +163,7 @@ func NewSlider(data []string) *Slider {
 
 		n := min(len(subData), len(slider.sampleSets))
 
-		for i := 0; i < n; i++ {
+		for i := range n {
 			extras := strings.Split(subData[i], ":")
 
 			sampleSet, _ := strconv.Atoi(extras[0])
@@ -380,13 +381,13 @@ func (slider *Slider) calculateFollowPointsLazer(beatmapVersion int) {
 
 	cLength := slider.multiCurve.GetLengthLazer()
 
-	velocity := 100 * slider.Timings.SliderMult / slider.TPoint.GetBeatLength()
+	velocity := 100 * slider.Timings.SliderMult / slider.TPoint.GetBeatLengthLazer()
 
 	scoringDistance := velocity * slider.TPoint.GetBaseBeatLength()
 
 	tickDistanceMultiplier := 1.0
 	if beatmapVersion < 8 {
-		tickDistanceMultiplier = 1.0 / slider.TPoint.GetRatio2()
+		tickDistanceMultiplier = 1.0 / slider.TPoint.GetRatioLazer()
 	}
 
 	tickDistance := scoringDistance / slider.Timings.TickRate * tickDistanceMultiplier
@@ -464,7 +465,7 @@ func (slider *Slider) calculateFollowPointsStable(beatmapVersion int) {
 	scoringDistance := 0.0
 
 	// Stable-like score point processing, ugly AF.
-	for i := 0; i < slider.RepeatCount; i++ {
+	for i := range slider.RepeatCount {
 		distanceToEnd := float64(slider.multiCurve.GetLength())
 		skipTick := nanTimingPoint // NaN SV acts like 1.0x SV, but doesn't spawn slider ticks
 
@@ -573,7 +574,7 @@ func (slider *Slider) SetDifficulty(diff *difficulty.Difficulty) {
 	slider.bodyFade = animation.NewGlider(0)
 	slider.bodyFade.AddEvent(slider.StartTime-diff.Preempt, slider.StartTime-(diff.Preempt-diff.TimeFadeIn), 1)
 
-	if diff.CheckModActive(difficulty.Hidden) {
+	if diff.HiddenFadesObjects() {
 		slider.bodyFade.AddEventEase(slider.StartTime-diff.Preempt+diff.TimeFadeIn, slider.EndTime, 0, easing.OutQuad)
 	}
 
@@ -823,7 +824,7 @@ func (slider *Slider) ArmStart(clicked bool, time float64) {
 		}
 	}
 
-	if !slider.diff.CheckModActive(difficulty.Hidden) {
+	if !slider.diff.HiddenFadesObjects() {
 		if settings.Objects.Sliders.Snaking.Out && settings.Objects.Sliders.Snaking.OutFadeInstant {
 			slider.bodyFade.AddEvent(slider.EndTime, slider.EndTime, 0)
 		} else {
@@ -873,7 +874,7 @@ func (slider *Slider) initSnake() {
 		p.scale.AddEventSEase(endTime, endTime+150, 1.2, 1.0, easing.OutQuad)
 		p.fade.AddEventS(startTime, endTime, 0.0, 1.0)
 
-		if slider.diff.CheckModActive(difficulty.Hidden) {
+		if slider.diff.HiddenFadesObjects() {
 			p.fade.AddEventS(max(endTime, p.Time-1000), p.Time, 1.0, 0.0)
 		} else {
 			p.fade.AddEventS(p.Time, p.Time, 1.0, 0.0)
@@ -911,7 +912,7 @@ func (slider *Slider) InitSlide(time float64) {
 
 	endValue := 1.1 - (fadeTime/fadeBase)*0.1
 
-	for i := 0; i < len(slider.ScorePoints)-1; i++ {
+	for i := range len(slider.ScorePoints) - 1 {
 		p := slider.ScorePoints[i]
 		endTime := p.Time + fadeTime
 
@@ -1047,7 +1048,7 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 	}
 
 	if slider.diff.CheckModActive(difficulty.Traceable) && slider.HitObjectID != 0 {
-		borderInner = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), circleColor)
+		borderInner = skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), circleColor)
 		if borderInner != circleColor {
 			borderInner = borderInner.Shift(mShift, 0, 0)
 		}
@@ -1055,7 +1056,7 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 		bodyOpacityInner = 0
 		bodyOpacityOuter = 0
 	} else if settings.Skin.UseColorsFromSkin {
-		borderOuter = skin.GetInfo().SliderBorder
+		borderOuter = skin.GetColor(skin.SliderBorder)
 		borderInner = borderOuter
 
 		borderOuter.A = float32(colorAlpha)
@@ -1063,10 +1064,10 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 
 		var baseTrack color2.Color
 
-		if skin.GetInfo().SliderTrackOverride != nil {
-			baseTrack = *skin.GetInfo().SliderTrackOverride
+		if c, ok := skin.TryGetColor(skin.SliderTrackOverride); ok {
+			baseTrack = c
 		} else {
-			baseTrack = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), baseTrack)
+			baseTrack = skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), baseTrack)
 		}
 
 		borderOuter = borderOuter.Shift(mShift, 0, 0)
@@ -1077,13 +1078,13 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 		bodyInner = baseTrack.Shade2(0.5)
 	} else {
 		if settings.Objects.Colors.Sliders.Border.UseHitCircleColor {
-			newInner := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderInner)
+			newInner := skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), borderInner)
 			if newInner != borderInner {
 				newInner = newInner.Shift(mShift, 0, 0)
 			}
 			borderInner = newInner
 
-			newOuter := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), borderOuter)
+			newOuter := skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), borderOuter)
 			if newOuter != borderOuter {
 				newOuter = newOuter.Shift(mShift, 0, 0)
 			}
@@ -1091,7 +1092,7 @@ func (slider *Slider) DrawBody(_ float64, circleColor, bodyColor, innerBorder, o
 		}
 
 		if settings.Objects.Colors.Sliders.Body.UseHitCircleColor {
-			newBody := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), bodyColor)
+			newBody := skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), bodyColor)
 			if newBody != bodyColor {
 				newBody = newBody.Shift(mShift, 0, 0)
 			}
@@ -1171,10 +1172,8 @@ func (slider *Slider) Draw(time float64, color color2.Color, batch *batch.QuadBa
 
 		batch.SetSubScale(1, 1)
 
-		if settings.Objects.Sliders.DrawEndCircles {
-			for i := len(slider.endCircles) - 1; i >= 0; i-- {
-				slider.endCircles[i].Draw(time, color, batch)
-			}
+		for i := len(slider.endCircles) - 1; i >= 0; i-- {
+			slider.endCircles[i].Draw(time, color, batch)
 		}
 	}
 
@@ -1227,9 +1226,14 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 		c := color2.NewL(1)
 
 		if skin.GetInfo().SliderBallTint {
-			c = skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), c)
-		} else if skin.GetInfo().SliderBall != nil {
-			c = *skin.GetInfo().SliderBall
+			color = skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
+		} else if c, ok := skin.TryGetColor(skin.SliderBall); ok {
+			color = c
+		}
+		
+		c := color
+		if settings.DIVIDES > 1 {
+			c = c.Shift(mShift, 0, 0)
 		}
 
 		if settings.DIVIDES > 1 {
@@ -1238,7 +1242,7 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 
 		batch.SetColor(float64(c.R), float64(c.G), float64(c.B), alpha)
 	} else if settings.Objects.Colors.Sliders.SliderBallTint {
-		newColor := skin.GetColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
+		newColor := skin.GetObjectColor(int(slider.ComboSet), int(slider.ComboSetHax), color)
 
 		if settings.DIVIDES > 1 && settings.Objects.Colors.Sliders.SliderBallTint {
 			if newColor != color {

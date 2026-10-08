@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/wieku/danser-go/app/audio"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/settings"
@@ -427,13 +428,18 @@ func (spinner *Spinner) Clear() {
 	spinner.clear.AddTransform(animation.NewSingleTransform(animation.Fade, easing.OutQuad, spinner.lastTime, spinner.lastTime+spinner.diff.TimeFadeIn, 0.0, 1.0))
 }
 
-func (spinner *Spinner) Bonus(bonusValue int) {
+func (spinner *Spinner) Bonus(bonusValue int, time int64) {
 	if spinner.glow != nil {
 		spinner.glow.AddTransform(animation.NewColorTransform(animation.Color3, easing.OutQuad, spinner.lastTime, spinner.lastTime+difficulty.HitFadeOut, color2.Color{R: 1, G: 1, B: 1, A: 1}, spinnerBlue))
 	}
 
 	if spinner.spinnerbonus != nil && !spinner.audioSubmissionDisabled {
-		spinner.spinnerbonus.Play()
+		v := 1.0
+		if !settings.Audio.IgnoreBeatmapSampleVolume {
+			v = spinner.Timings.GetPointAt(float64(time)).SampleVolume
+		}
+
+		spinner.spinnerbonus.PlayRV(v)
 	}
 
 	spinner.bonusFade.Reset()

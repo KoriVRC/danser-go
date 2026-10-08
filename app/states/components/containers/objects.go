@@ -6,6 +6,7 @@ import (
 	"sort"
 
 	"github.com/go-gl/mathgl/mgl32"
+
 	"github.com/wieku/danser-go/app/beatmap"
 	"github.com/wieku/danser-go/app/beatmap/difficulty"
 	"github.com/wieku/danser-go/app/beatmap/objects"
@@ -205,7 +206,7 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 		batch.SetScale(float64(scale)*container.beatMap.Diff.CircleRadius/64, float64(scale)*container.beatMap.Diff.CircleRadius/64)
 
 		if divides < settings.Objects.Colors.MandalaTexturesTrigger && settings.Objects.DrawFollowPoints {
-			for i := 0; i < divides; i++ {
+			for i := range divides {
 				batch.SetCamera(cameras[i])
 				container.spriteManager.Draw(time, batch)
 			}
@@ -228,7 +229,7 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 		if settings.Objects.Sliders.SliderMerge {
 			enabled := false
 
-			for j := 0; j < divides; j++ {
+			for j := range divides {
 				ind := j - 1
 				if ind < 0 {
 					ind = divides - 1
@@ -263,7 +264,7 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 		batch.SetAdditive(divides >= settings.Objects.Colors.MandalaTexturesTrigger)
 		batch.SetScale(float64(scale)*container.beatMap.Diff.CircleRadius/64, float64(scale)*container.beatMap.Diff.CircleRadius/64)
 
-		for j := 0; j < divides; j++ {
+		for j := range divides {
 			batch.SetCamera(cameras[j])
 
 			ind := j - 1
@@ -322,7 +323,7 @@ func (container *HitObjectContainer) Draw(batch *batch.QuadBatch, baseCamera mgl
 		}
 
 		if divides < settings.Objects.Colors.MandalaTexturesTrigger && settings.Objects.DrawApproachCircles {
-			for j := 0; j < divides; j++ {
+			for j := range divides {
 				batch.SetCamera(cameras[j])
 
 				for i := len(container.renderables) - 1; i >= 0; i-- {
