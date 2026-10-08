@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/wieku/danser-go/app/settings"
 )
@@ -120,27 +121,42 @@ func LookupUser(nickname string) (*User, error) {
 	return user, nil
 }
 
-func DownloadReplay(scoreId int64) (io.ReadCloser, error) {
-	resp, err := makeRequest("scores/osu/" + strconv.FormatInt(scoreId, 10) + "/download")
+func DownloadReplay(scoreId int64, hasReplay bool) (io.ReadCloser, error) {
+	var err error
+	var resp *http.Response
 
-	if err != nil {
+	if hasReplay {
+		resp, err = makeRequest("scores/osu/" + strconv.FormatInt(scoreId, 10) + "/download")
+		if err == nil {
+			return resp.Body, nil
+		}
 		log.Printf("OsuApi: Official V2 download failed for %d (%v). Trying mirror...", scoreId, err)
-
-		// Try osudaily mirror
-		mResp, mErr := http.Get("https://osudaily.net/replays/" + strconv.FormatInt(scoreId, 10) + ".osr")
-		if mErr == nil && mResp.StatusCode == http.StatusOK {
-			log.Printf("OsuApi: Downloaded replay %d from mirror!", scoreId)
-			return mResp.Body, nil
-		}
-
-		if mErr == nil {
-			mResp.Body.Close()
-		}
-
-		return nil, err
+	} else {
+		log.Printf("OsuApi: API indicates no replay for %d. Skipping official API, trying mirror directly...", scoreId)
 	}
 
-	return resp.Body, nil
+	// Try osudaily mirror with retry and backoff
+	for i := 0; i < 3; i++ {
+		mResp, mErr := http.Get("https://osudaily.net/replays/" + strconv.FormatInt(scoreId, 10) + ".osr")
+		if mErr == nil {
+			if mResp.StatusCode == http.StatusOK {
+				log.Printf("OsuApi: Downloaded replay %d from mirror!", scoreId)
+				return mResp.Body, nil
+			} else if mResp.StatusCode == http.StatusTooManyRequests {
+				log.Printf("OsuApi: Mirror rate limit hit (429). Retrying in 2 seconds...")
+				mResp.Body.Close()
+				time.Sleep(2 * time.Second)
+				continue
+			}
+			mResp.Body.Close()
+		}
+		break
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	return nil, fmt.Errorf("OsuApi: Replay not available on official or mirror servers")
 }
 
 func DownloadReplayV1(beatmapId int64, score Score, beatmapMD5 string, mode int) (io.ReadCloser, error) {

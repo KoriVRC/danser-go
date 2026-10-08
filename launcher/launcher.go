@@ -2065,12 +2065,7 @@ func (l *launcher) downloadKnockoutReplays() {
 				}
 
 				if respBody == nil {
-					if !score.Replay {
-						log.Printf("OsuApi: Skipping replay for %s (no replay available according to API)", score.User.Username)
-						continue
-					}
-
-					respBody, err = osuapi.DownloadReplay(score.ID)
+					respBody, err = osuapi.DownloadReplay(score.ID, score.Replay)
 				}
 
 				if err != nil {
