@@ -1231,11 +1231,7 @@ func (slider *Slider) drawBall(time float64, batch *batch.QuadBatch, color color
 			color = c
 		}
 		
-		c := color
-		if settings.DIVIDES > 1 {
-			c = c.Shift(mShift, 0, 0)
-		}
-
+		c = color
 		if settings.DIVIDES > 1 {
 			c = c.Shift(mShift, 0, 0)
 		}

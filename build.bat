@@ -134,7 +134,7 @@ echo [4/4] Generating application resources...
 windres -l 0 %WINDRESFLAGS% -o "%BUILD_DIR%\danser.syso" "%BUILD_DIR%\danser.rc"
 
 echo Copying dependency DLLs...
-for %%f in (bass.dll bass_fx.dll bassmix.dll libyuv.dll) do (
+for %%f in (bass.dll bass_fx.dll bassmix.dll libyuv.dll SDL3.dll) do (
     if exist "%%f" (
         copy "%%f" "%BUILD_DIR%\" >nul
     ) else (
